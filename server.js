@@ -16,7 +16,10 @@ const ExcelJS = require('exceljs');
 const cloudinary = require('cloudinary').v2;
 const { db, initializeDatabase, readSettings, setSetting } = require('./lib/db');
 
-if (process.env.NETLIFY) {
+const runningInFunction = Boolean(
+  process.env.NETLIFY || process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.LAMBDA_TASK_ROOT
+);
+if (runningInFunction) {
   const requiredEnvironment = ['DATABASE_URL', 'CLOUDINARY_URL', 'SESSION_SECRET', 'ADMIN_EMAIL', 'ADMIN_PASSWORD'];
   const missingEnvironment = requiredEnvironment.filter((key) => !process.env[key]);
   if (missingEnvironment.length) {
