@@ -1,0 +1,54 @@
+    </main>
+
+    <footer class="site-footer">
+      <div class="container footer-grid">
+        <div>
+          <div class="brand footer-brand">
+            <img src="/images/logo.png" alt="Shivanda logo" />
+          </div>
+          <p>Shivanda Properties & Construction helps families and investors find the right property, secure loans and build dream homes with confidence.</p>
+        </div>
+        <div>
+          <h4>Quick links</h4>
+          <ul>
+            <li><a href="/properties">Properties</a></li>
+            <li><a href="/construction">Construction</a></li>
+            <li><a href="/construction#packages">Packages</a></li>
+            <li><a href="/contact">Contact</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Reach us</h4>
+          <ul>
+            <li><a href="tel:<%= siteSettings.phone || '+91 98765 43210' %>"><%= siteSettings.phone || '+91 98765 43210' %></a></li>
+            <li><a href="mailto:<%= siteSettings.email || 'hello@shivanda.in' %>"><%= siteSettings.email || 'hello@shivanda.in' %></a></li>
+            <li><%= siteSettings.address || 'Bengaluru, Karnataka' %></li>
+            <li><a href="<%= siteSettings.map_link || 'https://maps.google.com/?q=Bengaluru%20Karnataka' %>" target="_blank" rel="noopener noreferrer">Open map</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Follow</h4>
+          <ul>
+            <li><a href="https://instagram.com" target="_blank" rel="noopener noreferrer">Instagram</a></li>
+            <li><a href="https://facebook.com" target="_blank" rel="noopener noreferrer">Facebook</a></li>
+            <li><a href="https://linkedin.com" target="_blank" rel="noopener noreferrer">LinkedIn</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <div class="container">
+          <span>© 2026 Shivanda Properties & Construction</span>
+          <a href="/admin/login">Admin Login</a>
+        </div>
+      </div>
+    </footer>
+
+    <div class="mobile-bottom-bar" aria-label="Quick links">
+      <a href="tel:<%= siteSettings.phone || '+91 98765 43210' %>">Call</a>
+      <a href="https://wa.me/<%= (siteSettings.whatsapp || '+919876543210').replace(/\D/g, '') %>" target="_blank" rel="noreferrer">WhatsApp</a>
+      <a href="#enquire">Enquire</a>
+    </div>
+
+    <script src="/js/app.js?v=2" defer></script>
+  </body>
+</html>

@@ -1,0 +1,49 @@
+{
+  "name": "shivanda-properties-construction",
+  "version": "1.0.0",
+  "description": "Shivanda Properties & Construction website and admin dashboard",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "seed": "node seed.js",
+    "migrate:cloud": "node scripts/migrate-to-supabase.js",
+    "prepare-assets": "node scripts/prepare-assets.js",
+    "test": "node tests/verify.js"
+  },
+  "keywords": [
+    "real-estate",
+    "construction",
+    "bengaluru",
+    "express",
+    "sqlite"
+  ],
+  "author": "Shivanda",
+  "license": "MIT",
+  "type": "commonjs",
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "better-sqlite3": "^13.0.3",
+    "cloudinary": "^2.11.0",
+    "cookie-session": "^2.1.1",
+    "csurf": "^1.11.0",
+    "dotenv": "^18.0.7",
+    "ejs": "^7.0.1",
+    "exceljs": "^4.4.0",
+    "express": "^5.3.0",
+    "express-rate-limit": "^8.7.1",
+    "helmet": "^8.3.0",
+    "multer": "^2.4.0",
+    "pg": "^8.23.1",
+    "serverless-http": "^4.0.0",
+    "sharp": "^0.35.5",
+    "uuid": "^14.0.3",
+    "zod": "^4.6.6"
+  },
+  "overrides": {
+    "cookie": "^0.7.2",
+    "exceljs": {
+      "uuid": "^11.1.1"
+    }
+  }
+}

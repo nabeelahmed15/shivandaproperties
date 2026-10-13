@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Shivanda Properties & Construction offers premium real estate and construction services across Bengaluru." />
+    <meta name="csrf-token" content="cjdYFclU-GlQbscKEJqWlQ-fDqTrP7_yn_hw" />
+    <meta property="og:title" content="Shivanda Properties & Construction | Real Estate and Construction in Bengaluru" />
+    <meta property="og:description" content="Explore homes, investments, and turnkey construction services in Bengaluru with Shivanda." />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="/images/logo.webp" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <title>Shivanda Properties &amp; Construction | Real Estate and Construction in Bengaluru</title>
+    <link rel="icon" type="image/png" href="/images/favicon-32.png" />
+    <link rel="apple-touch-icon" href="/images/apple-touch-icon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/css/styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="container nav-wrap">
+        <a class="brand" href="/" aria-label="Shivanda home">
+          <img src="/images/logo.png" alt="Shivanda Properties & Construction Logo" />
+        </a>
+        <nav class="main-nav" aria-label="Main navigation">
+          <a href="/properties">Real Estate</a>
+          <a href="/construction">Construction</a>
+          <a href="/construction#packages">Packages</a>
+          <a href="/#process">Process</a>
+          <a href="/#faq">FAQs</a>
+          <a href="/contact">Contact</a>
+        </nav>
+        <a class="btn btn-primary enquire-button" href="#enquire">Enquire</a>
+        <button class="menu-toggle" type="button" aria-label="Open menu">☰</button>
+      </div>
+    </header>
+
+    <div class="mobile-nav" aria-label="Mobile navigation">
+      <a href="/properties">Real Estate</a>
+      <a href="/construction">Construction</a>
+      <a href="/construction#packages">Packages</a>
+      <a href="/#process">Process</a>
+      <a href="/#faq">FAQs</a>
+      <a href="/contact">Contact</a>
+    </div>
+
+    <main class="page-shell">
+
+
+<section class="hero">
+  <div class="container hero-grid">
+    <div>
+      <p class="eyebrow">Bengaluru property and construction experts</p>
+      <h1>Find your next address or build with confidence.</h1>
+      <p>From ready-to-move homes to turnkey construction, Shivanda brings local expertise, legal clarity and honest guidance at every step.</p>
+      <div class="search-panel">
+        <form action="/properties" method="GET" class="search-form">
+          <div class="field-row">
+            <div class="form-group">
+              <label for="location">Location</label>
+              <input id="location" type="text" name="location" placeholder="Bengaluru locality" />
+            </div>
+            <div class="form-group">
+              <label for="type">Property type</label>
+              <select id="type" name="type">
+                <option value="">Any</option>
+                <option>Apartment</option>
+                <option>Villa</option>
+                <option>Plot</option>
+                <option>Commercial</option>
+                <option>Independent House</option>
+              </select>
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="form-group">
+              <label for="minBudget">Min budget</label>
+              <select id="minBudget" name="minBudget">
+                <option value="">Any</option>
+                <option value="2500000">₹25L</option>
+                <option value="5000000">₹50L</option>
+                <option value="7500000">₹75L</option>
+                <option value="10000000">₹1Cr</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="maxBudget">Max budget</label>
+              <select id="maxBudget" name="maxBudget">
+                <option value="">Any</option>
+                <option value="5000000">₹50L</option>
+                <option value="10000000">₹1Cr</option>
+                <option value="20000000">₹2Cr</option>
+                <option value="50000000">₹5Cr</option>
+              </select>
+            </div>
+          </div>
+          <button class="btn btn-primary" type="submit">Search properties</button>
+        </form>
+      </div>
+    </div>
+
+    <aside class="enquiry-panel" id="enquire">
+      <h3>Request a callback</h3>
+      <form data-enquiry-form>
+        <input type="hidden" name="website" value="" />
+        <div class="form-group">
+          <label for="hero-name">Name</label>
+          <input id="hero-name" name="name" required maxlength="100" placeholder="Your name" />
+        </div>
+        <div class="field-row">
+          <div class="form-group">
+            <label for="hero-phone">Phone</label>
+            <input id="hero-phone" name="phone" required type="tel" inputmode="numeric" pattern="^(?:\+?91|0)?[6-9]\d{9}$" placeholder="+91 98xxxxxx" />
+          </div>
+          <div class="form-group">
+            <label for="hero-service">Service</label>
+            <select id="hero-service" name="serviceType">
+              <option>Buy</option>
+              <option>Sell</option>
+              <option>Loan</option>
+              <option>Legal</option>
+              <option>Invest</option>
+              <option>Residential Construction</option>
+              <option>Villa Construction</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="hero-message">Message</label>
+          <textarea id="hero-message" name="message" required minlength="10" maxlength="500" placeholder="Tell us what you need"></textarea>
+        </div>
+        <button class="btn btn-primary" type="submit">Send enquiry</button>
+      </form>
+    </aside>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="section-header">
+      <h2>Our services</h2>
+      <p>Clear guidance across real estate and construction.</p>
+    </div>
+    <div class="service-grid">
+      <article class="service-card">
+        <div class="icon-box">🏠</div>
+        <h3>Real Estate</h3>
+        <ul class="spec-list">
+          <li><span>Buy & Sell</span><span>✓</span></li>
+          <li><span>Loans</span><span>✓</span></li>
+          <li><span>Legal & Registration</span><span>✓</span></li>
+          <li><span>Invest</span><span>✓</span></li>
+        </ul>
+        <a class="btn btn-secondary" href="/properties">Explore listings</a>
+      </article>
+      <article class="service-card">
+        <div class="icon-box">🏗️</div>
+        <h3>Construction</h3>
+        <ul class="spec-list">
+          <li><span>Residential</span><span>✓</span></li>
+          <li><span>Rental</span><span>✓</span></li>
+          <li><span>Commercial</span><span>✓</span></li>
+          <li><span>Villa</span><span>✓</span></li>
+        </ul>
+        <a class="btn btn-secondary" href="/construction">View packages</a>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="section section-alt">
+          <img src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&amp;fit=crop&amp;w=1200&amp;q=80" alt="Silverline Court, Indiranagar" loading="lazy" />
+          <div class="card-body">
+            <div class="price-row">
+              <strong>₹1.44 Cr</strong>
+              <span class="badge">Available</span>
+            </div>
+            <h3>Silverline Court, Indiranagar</h3>
+            <p><strong>Indiranagar</strong></p>
+            <div class="meta-row">
+              <span>Commercial</span>
+              <span>0 Beds</span>
+              <span>2 Baths</span>
+            </div>
+            <div class="meta-row" style="margin-top: 0.8rem;">
+              <span>1560 sq ft</span>
+            </div>
+            <div style="margin-top: 1rem;">
+              <a class="btn btn-secondary" href="/property/silverline-court-indiranagar">View details</a>
+            </div>
+          </div>
+        </article>
+      
+    </div>
+  </div>
+</section>
+
+<section class="section section-alt">
+  <div class="container">
+    <div class="section-header">
+      <h2>Construction packages</h2>
+      <p>Transparent rates and value-driven construction options.</p>
+    </div>
+    <div class="package-grid">
+      
+        <article class="package-card ">
+          <div class="package-rate">₹1999<span style="font-size: 0.9rem;">/sq ft</span></div>
+          
+          <h3>Elegance</h3>
+          <ul class="spec-list">
+            
+              <li><span>Design</span><span>Included</span></li>
+            
+              <li><span>Structure</span><span>Included</span></li>
+            
+              <li><span>Kitchen</span><span>Included</span></li>
+            
+              <li><span>Bathroom</span><span>Included</span></li>
+            
+          </ul>
+          <button class="btn btn-primary open-enquiry" data-interest="Elegance" type="button">Enquire Now</button>
+        </article>
+      
+        <article class="package-card highlight">
+          <div class="package-rate">₹2149<span style="font-size: 0.9rem;">/sq ft</span></div>
+          <div class="badge" style="margin-top: 0.7rem;">Most Chosen</div>
+          <h3>Premium</h3>
+          <ul class="spec-list">
+            
+              <li><span>Design</span><span>Included</span></li>
+            
+              <li><span>Structure</span><span>Included</span></li>
+            
+              <li><span>Kitchen</span><span>Included</span></li>
+            
+              <li><span>Bathroom</span><span>Included</span></li>
+            
+          </ul>
+          <button class="btn btn-primary open-enquiry" data-interest="Premium" type="button">Enquire Now</button>
+        </article>
+      
+        <article class="package-card ">
+          <div class="package-rate">₹2299<span style="font-size: 0.9rem;">/sq ft</span></div>
+          <div class="badge" style="margin-top: 0.7rem;">Best Value</div>
+          <h3>Elite</h3>
+          <ul class="spec-list">
+            
+              <li><span>Design</span><span>Included</span></li>
+            
+              <li><span>Structure</span><span>Included</span></li>
+            
+              <li><span>Kitchen</span><span>Included</span></li>
+            
+              <li><span>Bathroom</span><span>Included</span></li>
+            
+          </ul>
+          <button class="btn btn-primary open-enquiry" data-interest="Elite" type="button">Enquire Now</button>
+        </article>
+      
+        <article class="package-card ">
+          <div class="package-rate">₹2399<span style="font-size: 0.9rem;">/sq ft</span></div>
+          
+          <h3>Luxury</h3>
+          <ul class="spec-list">
+            
+              <li><span>Design</span><span>Included</span></li>
+            
+              <li><span>Structure</span><span>Included</span></li>
+            
+              <li><span>Kitchen</span><span>Included</span></li>
+            
+              <li><span>Bathroom</span><span>Included</span></li>
+            
+          </ul>
+          <button class="btn btn-primary open-enquiry" data-interest="Luxury" type="button">Enquire Now</button>
+        </article>
+      
+    </div>
+  </div>
+</section>
+
+<section class="section" style="background: rgba(236,231,219,0.5);">
+  <div class="container">
+    <div class="stats-row">
+      <div class="stat-box"><strong>12+</strong><br />Years of experience</div>
+      <div class="stat-box"><strong>480+</strong><br />Properties sold</div>
+      <div class="stat-box"><strong>120+</strong><br />Homes built</div>
+      <div class="stat-box"><strong>1200+</strong><br />Happy families</div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="section-header">
+      <h2>Why choose Shivanda</h2>
+      <p>Thoughtful guidance with design, legal and construction support.</p>
+    </div>
+    <div class="grid-3">
+      <div class="service-card"><div class="icon-box">🧭</div><h3>Free Consultation</h3><p>Unbiased advice on property and construction needs.</p></div>
+      <div class="service-card"><div class="icon-box">🛠️</div><h3>Quality Construction</h3><p>Strong standards, material guidance and site oversight.</p></div>
+      <div class="service-card"><div class="icon-box">₹</div><h3>Transparent Pricing</h3><p>Clear estimates and no hidden surprises along the way.</p></div>
+      <div class="service-card"><div class="icon-box">📜</div><h3>Legal Support</h3><p>Registration, approvals and end-to-end document assistance.</p></div>
+      <div class="service-card"><div class="icon-box">⏱️</div><h3>On-time Delivery</h3><p>Planning and milestone tracking for smooth handover.</p></div>
+      <div class="service-card"><div class="icon-box">🤝</div><h3>Local Insight</h3><p>Insights grounded in Bengaluru micro-markets and builder standards.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="process">
+  <div class="container">
+    <div class="section-header">
+      <h2>Our process</h2>
+      <p>Simple steps to move from enquiry to handover.</p>
+    </div>
+    <div class="process-grid">
+      <div class="process-step"><div class="step-no">1</div><h4>Consult</h4><p>We understand your goals and budget.</p></div>
+      <div class="process-step"><div class="step-no">2</div><h4>Design/Shortlist</h4><p>Review options, layouts and local comparisons.</p></div>
+      <div class="process-step"><div class="step-no">3</div><h4>Agreement</h4><p>Document clarity and proper pricing.</p></div>
+      <div class="process-step"><div class="step-no">4</div><h4>Execution</h4><p>Site visits and project scheduling.</p></div>
+      <div class="process-step"><div class="step-no">5</div><h4>Tracking</h4><p>Legal, payments and status updates.</p></div>
+      <div class="process-step"><div class="step-no">6</div><h4>Handover</h4><p>Final walkthrough and support after completion.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="section-header">
+      <h2>Completed projects</h2>
+      <p>A glimpse of our recent work across Bengaluru.</p>
+    </div>
+    <div class="gallery-grid">
+      
+        <figure class="project-card">
+          <img src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&amp;fit=crop&amp;w=1200&amp;q=80" alt="Commercial Build" loading="lazy" />
+          <figcaption style="padding-top: 0.8rem; font-weight: 600;">Commercial Build • Indiranagar</figcaption>
+        </figure>
+      
+        <figure class="project-card">
+          <img src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&amp;fit=crop&amp;w=1200&amp;q=80" alt="Villa Project" loading="lazy" />
+          <figcaption style="padding-top: 0.8rem; font-weight: 600;">Villa Project • Sarjapur</figcaption>
+        </figure>
+      
+    </div>
+  </div>
+</section>
+
+<section class="section" id="faq">
+  <div class="container">
+    <div class="section-header">
+      <h2>Frequently asked questions</h2>
+      <p>Helpful answers to common queries.</p>
+    </div>
+    <div class="accordion">
+      
+        <div class="faq-item active">
+          <button type="button"><span>Do you help with home loan assistance?</span><span>+</span></button>
+          <div class="faq-answer">Yes, we guide buyers toward trusted lenders and help coordinate documents for smoother processing.</div>
+        </div>
+      
+        <div class="faq-item ">
+          <button type="button"><span>Can I customise a construction package?</span><span>+</span></button>
+          <div class="faq-answer">Absolutely. The package can be adjusted based on your plot size, finishes and preferred layouts.</div>
+        </div>
+      
+        <div class="faq-item ">
+          <button type="button"><span>How do I know the property title is clear?</span><span>+</span></button>
+          <div class="faq-answer">We work with legal and registration partners to verify documents before you commit to a purchase.</div>
+        </div>
+      
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="service-card" style="padding: 2rem; background: linear-gradient(135deg, rgba(212,169,60,0.12), rgba(255,255,255,0.9));">
+      <h2>Ready to take the next step?</h2>
+      <p>Talk to Shivanda for property guidance, legal support, home loans or construction planning.</p>
+      <a class="btn btn-primary" href="/contact">Book a consultation</a>
+    </div>
+  </div>
+</section>
+
+    </main>
+
+    <footer class="site-footer">
+      <div class="container footer-grid">
+        <div>
+          <div class="brand footer-brand">
+            <img src="/images/logo.png" alt="Shivanda logo" />
+          </div>
+          <p>Shivanda Properties & Construction helps families and investors find the right property, secure loans and build dream homes with confidence.</p>
+        </div>
+        <div>
+          <h4>Quick links</h4>
+          <ul>
+            <li><a href="/properties">Properties</a></li>
+            <li><a href="/construction">Construction</a></li>
+            <li><a href="/construction#packages">Packages</a></li>
+            <li><a href="/contact">Contact</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Reach us</h4>
+          <ul>
+            <li><a href="tel:+91 98765 43210">+91 98765 43210</a></li>
+            <li><a href="mailto:hello@shivanda.in">hello@shivanda.in</a></li>
+            <li>Bengaluru, Karnataka</li>
+            <li><a href="https://maps.google.com/?q=Bengaluru%20Karnataka" target="_blank" rel="noopener noreferrer">Open map</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Follow</h4>
+          <ul>
+            <li><a href="https://instagram.com" target="_blank" rel="noopener noreferrer">Instagram</a></li>
+            <li><a href="https://facebook.com" target="_blank" rel="noopener noreferrer">Facebook</a></li>
+            <li><a href="https://linkedin.com" target="_blank" rel="noopener noreferrer">LinkedIn</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <div class="container">
+          <span>© 2026 Shivanda Properties & Construction</span>
+          <a href="/admin/login">Admin Login</a>
+        </div>
+      </div>
+    </footer>
+
+    <div class="mobile-bottom-bar" aria-label="Quick links">
+      <a href="tel:+91 98765 43210">Call</a>
+      <a href="https://wa.me/919876543210" target="_blank" rel="noreferrer">WhatsApp</a>
+      <a href="#enquire">Enquire</a>
+    </div>
+
+    <script src="/js/app.js" defer></script>
+  </body>
+</html>
+

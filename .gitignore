@@ -1,0 +1,12 @@
+node_modules/
+.netlify/
+.env
+cookie.txt
+.DS_Store
+*.log
+data/*.db
+data/*.db-*
+public/uploads/
+public/images/*.png
+public/images/*.webp
+public/images/*.ico

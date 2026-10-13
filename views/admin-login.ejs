@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="csrf-token" content="<%= csrfToken %>" />
+    <title>Shivanda Admin Login</title>
+    <link rel="icon" href="/images/favicon-32.png" />
+    <link rel="stylesheet" href="/css/styles.css" />
+  </head>
+  <body>
+    <div class="container" style="padding: 4rem 0; display: grid; place-items: center; min-height: 100vh;">
+      <div class="info-panel" style="width: min(500px, 100%);">
+        <div style="display: flex; justify-content: center; margin-bottom: 1rem;">
+          <img src="/images/logo.png" alt="Shivanda logo" style="width: 220px;" />
+        </div>
+        <h1>Shivanda Admin</h1>
+        <form id="admin-login-form" method="POST" action="/admin/login">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+          <div class="form-group">
+            <label for="admin-email">Email</label>
+            <input id="admin-email" name="email" type="email" required />
+          </div>
+          <div class="form-group">
+            <label for="admin-password">Password</label>
+            <input id="admin-password" name="password" type="password" required />
+          </div>
+          <button class="btn btn-primary" type="submit">Login</button>
+        </form>
+      </div>
+    </div>
+    <script>
+      const form = document.getElementById('admin-login-form');
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const formData = new FormData(form);
+        const data = Object.fromEntries(formData.entries());
+        const csrfFromMeta = document.querySelector('meta[name="csrf-token"]')?.content || '';
+        const res = await fetch('/admin/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': csrfFromMeta
+          },
+          body: JSON.stringify(data)
+        });
+        const result = await res.json();
+        if (result.success) window.location.href = result.redirect;
+        else alert(result.error || 'Login failed.');
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,237 @@
+<%- include('partials/header') %>
+
+<section class="hero">
+  <div class="container hero-grid">
+    <div>
+      <p class="eyebrow">Bengaluru property and construction experts</p>
+      <h1>Find your next address or build with confidence.</h1>
+      <p>From ready-to-move homes to turnkey construction, Shivanda brings local expertise, legal clarity and honest guidance at every step.</p>
+      <div class="search-panel">
+        <form action="/properties" method="GET" class="search-form">
+          <div class="field-row">
+            <div class="form-group">
+              <label for="location">Location</label>
+              <input id="location" type="text" name="location" placeholder="Bengaluru locality" />
+            </div>
+            <div class="form-group">
+              <label for="type">Property type</label>
+              <select id="type" name="type">
+                <option value="">Any</option>
+                <option>Apartment</option>
+                <option>Villa</option>
+                <option>Plot</option>
+                <option>Commercial</option>
+                <option>Independent House</option>
+              </select>
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="form-group">
+              <label for="minBudget">Min budget</label>
+              <select id="minBudget" name="minBudget">
+                <option value="">Any</option>
+                <option value="2500000">₹25L</option>
+                <option value="5000000">₹50L</option>
+                <option value="7500000">₹75L</option>
+                <option value="10000000">₹1Cr</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="maxBudget">Max budget</label>
+              <select id="maxBudget" name="maxBudget">
+                <option value="">Any</option>
+                <option value="5000000">₹50L</option>
+                <option value="10000000">₹1Cr</option>
+                <option value="20000000">₹2Cr</option>
+                <option value="50000000">₹5Cr</option>
+              </select>
+            </div>
+          </div>
+          <button class="btn btn-primary" type="submit">Search properties</button>
+        </form>
+      </div>
+    </div>
+
+    <aside class="enquiry-panel" id="enquire">
+      <h3>Request a callback</h3>
+      <form data-enquiry-form>
+        <input type="hidden" name="website" value="" />
+        <div class="form-group">
+          <label for="hero-name">Name</label>
+          <input id="hero-name" name="name" required maxlength="100" placeholder="Your name" />
+        </div>
+        <div class="field-row">
+          <div class="form-group">
+            <label for="hero-phone">Phone</label>
+            <input id="hero-phone" name="phone" required type="tel" inputmode="tel" pattern="^(?:\+?91[ -]?|0)?[6-9]\d{4}[ -]?\d{5}$" placeholder="+91 98765 43210" />
+          </div>
+          <div class="form-group">
+            <label for="hero-service">Service</label>
+            <select id="hero-service" name="serviceType">
+              <option>Buy</option>
+              <option>Sell</option>
+              <option>Loan</option>
+              <option>Legal</option>
+              <option>Invest</option>
+              <option>Residential Construction</option>
+              <option>Villa Construction</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="hero-message">Message</label>
+          <textarea id="hero-message" name="message" required minlength="10" maxlength="500" placeholder="Tell us what you need"></textarea>
+        </div>
+        <button class="btn btn-primary" type="submit">Send enquiry</button>
+      </form>
+    </aside>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="section-header">
+      <h2>Our services</h2>
+      <p>Clear guidance across real estate and construction.</p>
+    </div>
+    <div class="service-grid">
+      <article class="service-card">
+        <div class="icon-box">🏠</div>
+        <h3>Real Estate</h3>
+        <ul class="spec-list">
+          <li><span>Buy & Sell</span><span>✓</span></li>
+          <li><span>Loans</span><span>✓</span></li>
+          <li><span>Legal & Registration</span><span>✓</span></li>
+          <li><span>Invest</span><span>✓</span></li>
+        </ul>
+        <a class="btn btn-secondary" href="/properties">Explore listings</a>
+      </article>
+      <article class="service-card">
+        <div class="icon-box">🏗️</div>
+        <h3>Construction</h3>
+        <ul class="spec-list">
+          <li><span>Residential</span><span>✓</span></li>
+          <li><span>Rental</span><span>✓</span></li>
+          <li><span>Commercial</span><span>✓</span></li>
+          <li><span>Villa</span><span>✓</span></li>
+        </ul>
+        <a class="btn btn-secondary" href="/construction">View packages</a>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="section section-alt">
+  <div class="container">
+    <div class="section-header">
+      <h2>Construction packages</h2>
+      <p>Transparent rates and value-driven construction options.</p>
+    </div>
+    <div class="package-grid">
+      <% packages.forEach((pkg, index) => { %>
+        <article class="package-card <%= index === 1 ? 'highlight' : '' %>">
+          <div class="package-rate">₹<%= pkg.rate %><span style="font-size: 0.9rem;">/sq ft</span></div>
+          <% if (pkg.badge) { %><div class="badge" style="margin-top: 0.7rem;"><%= pkg.badge %></div><% } %>
+          <h3><%= pkg.name %></h3>
+          <ul class="spec-list">
+            <% pkg.specs.slice(0, 4).forEach((spec) => { %>
+              <li><span><%= spec.label %></span><span>Included</span></li>
+            <% }) %>
+          </ul>
+          <button class="btn btn-primary open-enquiry" data-interest="<%= pkg.name %>" type="button">Enquire Now</button>
+        </article>
+      <% }) %>
+    </div>
+  </div>
+</section>
+
+<section class="section" style="background: rgba(236,231,219,0.5);">
+  <div class="container">
+    <div class="stats-row">
+      <div class="stat-box"><strong>12+</strong><br />Years of experience</div>
+      <div class="stat-box"><strong>480+</strong><br />Properties sold</div>
+      <div class="stat-box"><strong>120+</strong><br />Homes built</div>
+      <div class="stat-box"><strong>1200+</strong><br />Happy families</div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="section-header">
+      <h2>Why choose Shivanda</h2>
+      <p>Thoughtful guidance with design, legal and construction support.</p>
+    </div>
+    <div class="grid-3">
+      <div class="service-card"><div class="icon-box">🧭</div><h3>Free Consultation</h3><p>Unbiased advice on property and construction needs.</p></div>
+      <div class="service-card"><div class="icon-box">🛠️</div><h3>Quality Construction</h3><p>Strong standards, material guidance and site oversight.</p></div>
+      <div class="service-card"><div class="icon-box">₹</div><h3>Transparent Pricing</h3><p>Clear estimates and no hidden surprises along the way.</p></div>
+      <div class="service-card"><div class="icon-box">📜</div><h3>Legal Support</h3><p>Registration, approvals and end-to-end document assistance.</p></div>
+      <div class="service-card"><div class="icon-box">⏱️</div><h3>On-time Delivery</h3><p>Planning and milestone tracking for smooth handover.</p></div>
+      <div class="service-card"><div class="icon-box">🤝</div><h3>Local Insight</h3><p>Insights grounded in Bengaluru micro-markets and builder standards.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="process">
+  <div class="container">
+    <div class="section-header">
+      <h2>Our process</h2>
+      <p>Simple steps to move from enquiry to handover.</p>
+    </div>
+    <div class="process-grid">
+      <div class="process-step"><div class="step-no">1</div><h4>Consult</h4><p>We understand your goals and budget.</p></div>
+      <div class="process-step"><div class="step-no">2</div><h4>Design/Shortlist</h4><p>Review options, layouts and local comparisons.</p></div>
+      <div class="process-step"><div class="step-no">3</div><h4>Agreement</h4><p>Document clarity and proper pricing.</p></div>
+      <div class="process-step"><div class="step-no">4</div><h4>Execution</h4><p>Site visits and project scheduling.</p></div>
+      <div class="process-step"><div class="step-no">5</div><h4>Tracking</h4><p>Legal, payments and status updates.</p></div>
+      <div class="process-step"><div class="step-no">6</div><h4>Handover</h4><p>Final walkthrough and support after completion.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="section-header">
+      <h2>Completed projects</h2>
+      <p>A glimpse of our recent work across Bengaluru.</p>
+    </div>
+    <div class="gallery-grid">
+      <% gallery.forEach((item) => { %>
+        <figure class="project-card">
+          <img src="<%= item.image_url %>" alt="<%= item.title %>" loading="lazy" />
+          <figcaption style="padding-top: 0.8rem; font-weight: 600;"><%= item.title %> • <%= item.location %></figcaption>
+        </figure>
+      <% }) %>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="faq">
+  <div class="container">
+    <div class="section-header">
+      <h2>Frequently asked questions</h2>
+      <p>Helpful answers to common queries.</p>
+    </div>
+    <div class="accordion">
+      <% faqs.forEach((faq, index) => { %>
+        <div class="faq-item <%= index === 0 ? 'active' : '' %>">
+          <button type="button"><span><%= faq.question %></span><span>+</span></button>
+          <div class="faq-answer"><%= faq.answer %></div>
+        </div>
+      <% }) %>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="service-card" style="padding: 2rem; background: linear-gradient(135deg, rgba(212,169,60,0.12), rgba(255,255,255,0.9));">
+      <h2>Ready to take the next step?</h2>
+      <p>Talk to Shivanda for property guidance, legal support, home loans or construction planning.</p>
+      <a class="btn btn-primary" href="/contact">Book a consultation</a>
+    </div>
+  </div>
+</section>
+
+<%- include('partials/footer') %>

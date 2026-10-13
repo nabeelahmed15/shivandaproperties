@@ -1,0 +1,73 @@
+<%- include('partials/header') %>
+
+<section class="page-top">
+  <div class="container">
+    <h1>Turnkey construction packages</h1>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="package-grid" id="packages">
+      <% packages.forEach((pkg, index) => { %>
+        <article class="package-card <%= index === 1 ? 'highlight' : '' %>">
+          <div class="package-rate">₹<%= pkg.rate %><span style="font-size:0.9rem;">/sq ft</span></div>
+          <% if (pkg.badge) { %><div class="badge" style="margin-top: 0.7rem;"><%= pkg.badge %></div><% } %>
+          <h3><%= pkg.name %></h3>
+          <ul class="spec-list">
+            <% pkg.specs.forEach((spec) => { %>
+              <li><span><%= spec.label %></span><span><%= spec.content %></span></li>
+            <% }) %>
+          </ul>
+          <button class="btn btn-primary open-enquiry" type="button" data-interest="<%= pkg.name %>">Enquire Now</button>
+        </article>
+      <% }) %>
+    </div>
+
+    <div class="service-card" style="margin-top:2rem; padding: 1.5rem;">
+      <h3>Indicative estimate</h3>
+      <div class="field-row" style="margin-top: 1rem; align-items: end;">
+        <div class="form-group">
+          <label for="area-input">Built-up area (sq ft)</label>
+          <input id="area-input" type="number" min="400" value="1200" />
+        </div>
+        <div class="form-group">
+          <label>Estimated total</label>
+          <div id="estimate-display" class="package-rate">₹0</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="section-header">
+      <h2>Construction services</h2>
+    </div>
+    <div class="grid-3">
+      <article class="service-card"><h3>Residential Construction</h3><p>Custom homes, duplexes, and family living spaces designed to improve comfort and resale value.</p><button class="btn btn-secondary open-enquiry" type="button" data-interest="Residential Construction">Enquire</button></article>
+      <article class="service-card"><h3>Rental Construction</h3><p>Smart layouts and efficient finishes built for consistent occupancy and lower maintenance.</p><button class="btn btn-secondary open-enquiry" type="button" data-interest="Rental Construction">Enquire</button></article>
+      <article class="service-card"><h3>Commercial Construction</h3><p>Office and retail spaces with structured planning, zoning insight and modern fit-outs.</p><button class="btn btn-secondary open-enquiry" type="button" data-interest="Commercial Construction">Enquire</button></article>
+      <article class="service-card"><h3>Villa Construction</h3><p>Luxury villas with elegant facades, designer detailing and premium finishes.</p><button class="btn btn-secondary open-enquiry" type="button" data-interest="Villa Construction">Enquire</button></article>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="section-header">
+      <h2>Project gallery</h2>
+    </div>
+    <div class="gallery-grid">
+      <% gallery.forEach((item) => { %>
+        <figure class="project-card">
+          <img src="<%= item.image_url %>" alt="<%= item.title %>" loading="lazy" />
+          <figcaption style="padding-top: 0.8rem; font-weight: 600;"><%= item.title %></figcaption>
+        </figure>
+      <% }) %>
+    </div>
+  </div>
+</section>
+
+<%- include('partials/footer') %>

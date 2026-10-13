@@ -1,0 +1,117 @@
+<%- include('partials/header') %>
+
+<section class="page-top">
+  <div class="container">
+    <h1>Properties in Bengaluru</h1>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container listing-layout">
+    <aside class="filter-panel">
+      <h3>Filters</h3>
+      <form action="/properties" method="GET">
+        <div class="form-group">
+          <label for="filter-location">Location</label>
+          <input id="filter-location" name="location" value="<%= filters.location %>" placeholder="Locality" />
+        </div>
+        <div class="field-row">
+          <div class="form-group">
+            <label for="minBudget">Min</label>
+            <select id="minBudget" name="minBudget">
+              <option value="">Any</option>
+              <option value="2500000" <%= filters.budgetMin == 2500000 ? 'selected' : '' %>>₹25L</option>
+              <option value="5000000" <%= filters.budgetMin == 5000000 ? 'selected' : '' %>>₹50L</option>
+              <option value="7500000" <%= filters.budgetMin == 7500000 ? 'selected' : '' %>>₹75L</option>
+              <option value="10000000" <%= filters.budgetMin == 10000000 ? 'selected' : '' %>>₹1Cr</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="maxBudget">Max</label>
+            <select id="maxBudget" name="maxBudget">
+              <option value="">Any</option>
+              <option value="5000000" <%= filters.budgetMax == 5000000 ? 'selected' : '' %>>₹50L</option>
+              <option value="10000000" <%= filters.budgetMax == 10000000 ? 'selected' : '' %>>₹1Cr</option>
+              <option value="20000000" <%= filters.budgetMax == 20000000 ? 'selected' : '' %>>₹2Cr</option>
+              <option value="50000000" <%= filters.budgetMax == 50000000 ? 'selected' : '' %>>₹5Cr</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="type">Type</label>
+          <select id="type" name="type">
+            <option value="">Any</option>
+            <option value="Apartment" <%= filters.type === 'Apartment' ? 'selected' : '' %>>Apartment</option>
+            <option value="Villa" <%= filters.type === 'Villa' ? 'selected' : '' %>>Villa</option>
+            <option value="Plot" <%= filters.type === 'Plot' ? 'selected' : '' %>>Plot</option>
+            <option value="Commercial" <%= filters.type === 'Commercial' ? 'selected' : '' %>>Commercial</option>
+            <option value="Independent House" <%= filters.type === 'Independent House' ? 'selected' : '' %>>Independent House</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="status">Availability</label>
+          <select id="status" name="status">
+            <option value="">Any</option>
+            <option value="Available" <%= filters.status === 'Available' ? 'selected' : '' %>>Available</option>
+            <option value="Sold" <%= filters.status === 'Sold' ? 'selected' : '' %>>Sold</option>
+            <option value="Rented" <%= filters.status === 'Rented' ? 'selected' : '' %>>Rented</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="sort">Sort by</label>
+          <select id="sort" name="sort">
+            <option value="newest" <%= filters.sort === 'newest' ? 'selected' : '' %>>Newest</option>
+            <option value="price_low_high" <%= filters.sort === 'price_low_high' ? 'selected' : '' %>>Price: Low to High</option>
+            <option value="price_high_low" <%= filters.sort === 'price_high_low' ? 'selected' : '' %>>Price: High to Low</option>
+          </select>
+        </div>
+        <button class="btn btn-primary" type="submit">Apply filters</button>
+      </form>
+    </aside>
+
+    <div>
+      <div class="section-header">
+        <h2>Available properties</h2>
+      </div>
+      <div class="grid-3">
+        <% properties.forEach((property) => { %>
+          <article class="property-card">
+            <img src="<%= property.cover_image || '/images/logo.webp' %>" alt="<%= property.title %>" loading="lazy" />
+            <div class="card-body">
+              <div class="price-row">
+                <strong><%= formatPrice(property.price) %></strong>
+                <span class="badge"><%= property.status %></span>
+              </div>
+              <h3><%= property.title %></h3>
+              <p><strong><%= property.locality %></strong></p>
+              <div class="meta-row">
+                <span><%= property.type %></span>
+                <span><%= property.bedrooms || 0 %> Beds</span>
+                <span><%= property.bathrooms || 0 %> Baths</span>
+              </div>
+              <div class="meta-row" style="margin-top: 0.8rem;">
+                <span><%= property.area %> sq ft</span>
+              </div>
+              <div style="margin-top: 1rem; display: flex; justify-content: space-between; gap: 0.75rem;">
+                <a class="btn btn-secondary" href="/property/<%= property.slug %>">View</a>
+                <button class="btn btn-primary open-enquiry" type="button" data-interest="<%= property.title %>">Enquire now</button>
+              </div>
+            </div>
+          </article>
+        <% }) %>
+      </div>
+
+      <div class="pager">
+        <% if (page > 1) { %>
+          <a href="/properties?page=<%= page - 1 %>&location=<%= encodeURIComponent(filters.location) %>&minBudget=<%= filters.budgetMin %>&maxBudget=<%= filters.budgetMax %>&type=<%= encodeURIComponent(filters.type) %>&status=<%= encodeURIComponent(filters.status) %>&sort=<%= encodeURIComponent(filters.sort) %>">Prev</a>
+        <% } %>
+        <span>Page <%= page %> of <%= totalPages %></span>
+        <% if (page < totalPages) { %>
+          <a href="/properties?page=<%= page + 1 %>&location=<%= encodeURIComponent(filters.location) %>&minBudget=<%= filters.budgetMin %>&maxBudget=<%= filters.budgetMax %>&type=<%= encodeURIComponent(filters.type) %>&status=<%= encodeURIComponent(filters.status) %>&sort=<%= encodeURIComponent(filters.sort) %>">Next</a>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</section>
+
+<%- include('partials/footer') %>

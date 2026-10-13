@@ -1,0 +1,114 @@
+<%- include('partials/header') %>
+
+<section class="page-top">
+  <div class="container">
+    <h1><%= property.title %></h1>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container detail-layout">
+    <div>
+      <div class="gallery-main">
+        <img src="<%= gallery[0] ? gallery[0].image_url : '/images/logo.webp' %>" alt="<%= property.title %>" loading="lazy" />
+      </div>
+      <div class="gallery-thumbs">
+        <% gallery.forEach((image) => { %>
+          <img src="<%= image.image_url %>" alt="Thumbnail" loading="lazy" />
+        <% }) %>
+      </div>
+
+      <div class="info-panel" style="margin-top: 2rem;">
+        <h2>Overview</h2>
+        <p><%= property.description %></p>
+        <div class="meta-row">
+          <span><strong>Address:</strong> <%= property.address %></span>
+          <span><strong>Locality:</strong> <%= property.locality %></span>
+          <span><strong>Status:</strong> <%= property.status %></span>
+        </div>
+      </div>
+
+      <div class="info-panel" style="margin-top: 1.5rem;">
+        <h2>Amenities</h2>
+        <div class="meta-row">
+          <% amenities.forEach((amenity) => { %>
+            <span class="badge"><%= amenity %></span>
+          <% }) %>
+        </div>
+      </div>
+    </div>
+
+    <aside class="info-panel">
+      <div class="price-row">
+        <h2><%= formatPrice(property.price) %></h2>
+        <span class="badge"><%= property.status %></span>
+      </div>
+      <p>RERA ID: <strong><%= property.rera_id || 'TBA' %></strong></p>
+      <p>Locality: <strong><%= property.locality %></strong></p>
+      <p>Property type: <strong><%= property.type %></strong></p>
+      <table class="spec-table">
+        <tr><th>Area</th><td><%= property.area %> sq ft</td></tr>
+        <tr><th>Price / sq ft</th><td>₹<%= property.price_per_sqft || Math.round(property.price / Math.max(property.area, 1)) %></td></tr>
+        <tr><th>Facing</th><td><%= property.facing %></td></tr>
+        <tr><th>Floor</th><td><%= property.floor || 'Not specified' %></td></tr>
+        <tr><th>Possession</th><td><%= property.possession_date || 'TBD' %></td></tr>
+        <tr><th>Approvals</th><td>Approved</td></tr>
+      </table>
+
+      <form data-enquiry-form style="margin-top: 1.2rem;">
+        <input type="hidden" name="website" value="" />
+        <input type="hidden" name="interestedProperty" value="<%= property.title %>" />
+        <input type="hidden" name="propertyId" value="<%= property.id %>" />
+        <div class="form-group">
+          <label for="detail-name">Name</label>
+          <input id="detail-name" name="name" required />
+        </div>
+        <div class="form-group">
+          <label for="detail-phone">Phone</label>
+          <input id="detail-phone" name="phone" required type="tel" inputmode="tel" pattern="^(?:\+?91[ -]?|0)?[6-9]\d{4}[ -]?\d{5}$" placeholder="+91 98765 43210" />
+        </div>
+        <div class="form-group">
+          <label for="detail-service">Interested in</label>
+          <select id="detail-service" name="serviceType">
+            <option>Buy</option>
+            <option>Sell</option>
+            <option>Loan</option>
+            <option>Legal</option>
+            <option>Invest</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="detail-message">Message</label>
+          <textarea id="detail-message" name="message" required minlength="10"></textarea>
+        </div>
+        <button class="btn btn-primary" type="submit">Enquire Now</button>
+      </form>
+    </aside>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="section-header">
+      <h2>Similar properties</h2>
+    </div>
+    <div class="grid-3">
+      <% similarProperties.forEach((item) => { %>
+        <article class="property-card">
+          <img src="<%= item.cover_image || '/images/logo.webp' %>" alt="<%= item.title %>" loading="lazy" />
+          <div class="card-body">
+            <strong><%= formatPrice(item.price) %></strong>
+            <h3><%= item.title %></h3>
+            <a class="btn btn-secondary" href="/property/<%= item.slug %>">View</a>
+          </div>
+        </article>
+      <% }) %>
+    </div>
+  </div>
+</section>
+
+<div class="container" style="padding-bottom: 3rem;">
+  <iframe loading="lazy" style="width:100%; min-height: 320px; border:0; border-radius: 18px;" src="https://maps.google.com/maps?q=<%= property.latitude %>,<%= property.longitude %>&z=13&output=embed"></iframe>
+</div>
+
+<%- include('partials/footer') %>
