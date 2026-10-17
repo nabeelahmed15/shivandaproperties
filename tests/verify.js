@@ -88,7 +88,20 @@ async function main() {
       env: { ...process.env, PORT: '3000' },
       stdio: 'inherit'
     });
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    let ready = false;
+    for (let attempt = 0; attempt < 30; attempt += 1) {
+      try {
+        const response = await fetch(`${baseUrl}/`, { method: 'GET' });
+        if (response.ok) {
+          ready = true;
+          break;
+        }
+      } catch (error) {
+        // Server still starting
+      }
+      await new Promise((resolve) => setTimeout(resolve, 500));
+    }
+    if (!ready) throw new Error('Spawned server failed to start within timeout');
   }
 
   try {
