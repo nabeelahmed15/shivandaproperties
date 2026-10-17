@@ -20,7 +20,7 @@ const runningInFunction = Boolean(
   process.env.NETLIFY || process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.LAMBDA_TASK_ROOT
 );
 if (runningInFunction) {
-  const requiredEnvironment = ['DATABASE_URL', 'CLOUDINARY_URL', 'SESSION_SECRET', 'ADMIN_EMAIL', 'ADMIN_PASSWORD'];
+  const requiredEnvironment = ['DATABASE_URL', 'SESSION_SECRET', 'ADMIN_EMAIL', 'ADMIN_PASSWORD'];
   const missingEnvironment = requiredEnvironment.filter((key) => !process.env[key]);
   if (missingEnvironment.length) {
     throw new Error(`Missing Netlify environment variables: ${missingEnvironment.join(', ')}`);
