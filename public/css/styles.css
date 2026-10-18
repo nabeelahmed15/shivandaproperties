@@ -506,6 +506,12 @@ form .field-row {
   font-size: 0.92rem;
 }
 
+.spec-list li span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
 .process-grid {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
@@ -698,6 +704,8 @@ form .field-row {
   margin-top: 2rem;
 }
 
+.detail-layout > * { min-width: 0; }
+
 .gallery-main img {
   width: 100%;
   height: 440px;
@@ -835,7 +843,7 @@ th { background: rgba(251, 182, 56, 0.14); color: var(--muted); font-size: 0.82r
 @media (max-width: 980px) {
   .main-nav { display: none; }
   .menu-toggle { display: inline-flex; align-items: center; justify-content: center; }
-  .hero-grid, .detail-layout, .listing-layout, .admin-shell, .grid-3, .grid-4, .footer-grid {
+  .hero-grid, .detail-layout, .listing-layout, .admin-shell, .grid-2, .grid-3, .grid-4, .footer-grid {
     grid-template-columns: 1fr;
   }
   .service-grid, .package-grid, .gallery-grid {
@@ -849,7 +857,7 @@ th { background: rgba(251, 182, 56, 0.14); color: var(--muted); font-size: 0.82r
 
 @media (max-width: 720px) {
   .hero { padding-top: 3rem; }
-  .hero h1 { font-size: 2.4rem; }
+  .hero h1 { font-size: clamp(2rem, 9vw, 2.4rem); }
   .service-grid, .package-grid, .gallery-grid, .stats-row, .process-grid, .field-row { grid-template-columns: 1fr; }
   .mobile-bottom-bar { display: grid; }
   body { padding-bottom: 4.5rem; }
@@ -857,4 +865,34 @@ th { background: rgba(251, 182, 56, 0.14); color: var(--muted); font-size: 0.82r
   .brand img { height: 40px; }
   .header-actions { display: none; }
   .enquire-button { display: none; }
+}
+
+/* Mobile optimizations */
+html { -webkit-tap-highlight-color: rgba(251, 182, 56, 0.35); }
+a, button, .btn { touch-action: manipulation; }
+
+.menu-toggle { width: 44px; height: 44px; }
+
+.mobile-nav a {
+  padding: 0.75rem 0.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 1.02rem;
+}
+
+.mobile-nav a:last-child { border-bottom: none; }
+
+@media (max-width: 720px) {
+  .section { padding: 3.5rem 0; }
+  .page-top { padding: 3rem 0 1.75rem; }
+  .page-top h1 { font-size: clamp(1.9rem, 8vw, 3rem); }
+  .gallery-main img { height: 260px; }
+  .gallery-thumbs img { height: 76px; }
+  .property-card img { height: 210px; }
+  .stats-row { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; }
+  .stat-box { padding: 1.1rem; }
+  .stat-box strong { font-size: 1.7rem; }
+  .mobile-bottom-bar { padding-bottom: env(safe-area-inset-bottom, 0); }
+  body { padding-bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px)); }
+  .search-panel, .enquiry-panel { padding: 1rem; }
+  .container { width: min(1160px, calc(100% - 1.75rem)); }
 }
