@@ -145,7 +145,7 @@
   </div>
 </section>
 
-<section class="section" style="background: rgba(236,231,219,0.5);">
+<section class="section" style="background: transparent;">
   <div class="container">
     <div class="stats-row">
       <div class="stat-box"><strong>12+</strong><br />Years of experience</div>
@@ -190,7 +190,7 @@
   </div>
 </section>
 
-<section class="section">
+<section class="section section-alt">
   <div class="container">
     <div class="section-header">
       <h2>Completed projects</h2>
@@ -200,7 +200,7 @@
       <% gallery.forEach((item) => { %>
         <figure class="project-card">
           <img src="<%= item.image_url %>" alt="<%= item.title %>" loading="lazy" />
-          <figcaption style="padding-top: 0.8rem; font-weight: 600;"><%= item.title %> • <%= item.location %></figcaption>
+          <figcaption style="padding-top: 0.8rem; font-weight: 600;"><%= item.title %> <span class="caption-muted">• <%= item.location %></span></figcaption>
         </figure>
       <% }) %>
     </div>
@@ -226,7 +226,7 @@
 
 <section class="section">
   <div class="container">
-    <div class="service-card" style="padding: 2rem; background: linear-gradient(135deg, rgba(212,169,60,0.12), rgba(255,255,255,0.9));">
+    <div class="service-card cta-card">
       <h2>Ready to take the next step?</h2>
       <p>Talk to Shivanda for property guidance, legal support, home loans or construction planning.</p>
       <a class="btn btn-primary" href="/contact">Book a consultation</a>
