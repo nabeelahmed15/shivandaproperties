@@ -16,6 +16,7 @@ const z = require('zod');
 const ExcelJS = require('exceljs');
 const cloudinary = require('cloudinary').v2;
 const { db, initializeDatabase, readSettings, setSetting } = require('./lib/db');
+const { saveEnquiry, removeEnquiry, rehydrate } = require('./lib/enquiry-store');
 
 const runningInFunction = Boolean(
   process.env.NETLIFY || process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.LAMBDA_TASK_ROOT
@@ -40,7 +41,7 @@ const uploadsDir = process.env.UPLOADS_DIR || (runningInFunction && !process.env
   : path.join(rootDir, 'public', 'uploads'));
 
 if (!process.env.CLOUDINARY_URL) fs.mkdirSync(uploadsDir, { recursive: true });
-const dbReady = initializeDatabase();
+const dbReady = initializeDatabase().then(() => rehydrate(db));
 
 const siteSettings = () => readSettings();
 
@@ -617,11 +618,15 @@ app.post('/admin/enquiries/:id/status', requireAdmin, csrfProtection, async (req
   if (!validStatus.includes(status)) return res.status(400).send('Invalid status');
 
   await db.prepare('UPDATE enquiries SET status = ?, updated_at = datetime("now") WHERE id = ?').run(status, req.params.id);
+  const updated = await db.prepare('SELECT * FROM enquiries WHERE id = ?').get(req.params.id);
+  await saveEnquiry(updated);
   res.redirect('/admin#enquiries');
 });
 
 app.post('/admin/enquiries/:id/delete', requireAdmin, csrfProtection, async (req, res) => {
+  const removed = await db.prepare('SELECT * FROM enquiries WHERE id = ?').get(req.params.id);
   await db.prepare('DELETE FROM enquiries WHERE id = ?').run(req.params.id);
+  await removeEnquiry(removed);
   res.redirect('/admin#enquiries');
 });
 
@@ -786,6 +791,9 @@ app.post('/api/enquiry', enquiryLimiter, csrfProtection, async (req, res) => {
       parsed.data.budgetRange || null,
       parsed.data.message
     );
+
+    const saved = await db.prepare('SELECT * FROM enquiries WHERE phone = ? ORDER BY id DESC LIMIT 1').get(parsed.data.phone);
+    await saveEnquiry(saved);
 
     return res.json({ success: true, message: 'Your enquiry has been sent successfully. We will contact you shortly.' });
   } catch (error) {
