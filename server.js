@@ -45,6 +45,7 @@ const dbReady = initializeDatabase();
 const siteSettings = () => readSettings();
 
 app.set('view engine', 'ejs');
+app.engine('ejs', require('ejs').__express);
 app.set('views', path.join(rootDir, 'views'));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
