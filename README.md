@@ -42,6 +42,8 @@ Use the values from ADMIN_EMAIL and ADMIN_PASSWORD to sign in at /admin/login.
 
 From the admin dashboard, use the Export CSV and Export Excel buttons. CSV files are BOM-prefixed for Excel compatibility and dangerous formula prefixes are escaped with an apostrophe.
 
+When the site runs on Netlify without `DATABASE_URL`, every enquiry is also archived to Netlify Blobs and restored into the database on cold starts and after deploys, so submissions are never lost; admin status changes and deletions are mirrored to the archive. With `DATABASE_URL` configured, the persistent database is the single source of truth and blob archiving stays off. Download an Excel or CSV copy of all enquiries from the admin dashboard at any time.
+
 ## Google Maps API key
 
 1. Open Google Cloud Console.
