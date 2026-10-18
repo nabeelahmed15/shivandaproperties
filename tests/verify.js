@@ -199,6 +199,19 @@ async function main() {
     assert(adminPage.status === 200, 'Admin dashboard should render after login');
     assert(adminPage.body.includes('Shivanda Admin'), 'Admin dashboard missing title');
 
+    const enquiryRow = adminPage.body.split(/<tr[\s>]/).find((chunk) => chunk.includes(firstPhone));
+    assert(enquiryRow, 'Created enquiry should appear in the admin dashboard');
+    const statusMatch = enquiryRow.match(/enquiries\/(\d+)\/status/);
+    assert(statusMatch, 'Enquiry row should include a status form');
+    const statusToken = parseCsrfToken(adminPage.body);
+    assert(statusToken, 'Admin dashboard should expose a CSRF token for enquiry actions');
+    const statusUpdate = await request(`/admin/enquiries/${statusMatch[1]}/status`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: `status=Contacted&_csrf=${encodeURIComponent(statusToken)}`
+    });
+    assert(statusUpdate.status === 200 || statusUpdate.status === 302, 'Enquiry status update should succeed');
+
     const updatePriceToken = parseCsrfToken(adminPage.body);
     const packageUpdate = await request('/admin/packages/1', {
       method: 'POST',
@@ -241,6 +254,38 @@ async function main() {
     });
     assert(propertyCreate.status === 200 || propertyCreate.status === 302, 'Property create flow should succeed');
 
+    const publishedListing = await request('/properties');
+    assert(publishedListing.status === 200, 'Property listing page failed after create');
+    assert(publishedListing.body.includes(uniquePropertyTitle), 'Published property should appear on the public listing');
+
+    const adminAfterCreate = await request('/admin');
+    assert(adminAfterCreate.status === 200, 'Admin dashboard should render after property create');
+    const createdRow = adminAfterCreate.body.split(/<tr[\s>]/).find((chunk) => chunk.includes(uniquePropertyTitle));
+    assert(createdRow, 'Created property should appear in the admin table');
+    const createdIdMatch = createdRow.match(/properties\/(\d+)\/toggle/);
+    assert(createdIdMatch, 'Created property row should include a publish toggle form');
+    const createdPropertyId = createdIdMatch[1];
+    const toggleToken = parseCsrfToken(adminAfterCreate.body);
+    assert(toggleToken, 'Admin dashboard should expose a CSRF token');
+
+    const unpublish = await request(`/admin/properties/${createdPropertyId}/toggle`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: `_csrf=${encodeURIComponent(toggleToken)}`
+    });
+    assert(unpublish.status === 200 || unpublish.status === 302, 'Publish toggle should succeed');
+    const hiddenListing = await request('/properties');
+    assert(!hiddenListing.body.includes(uniquePropertyTitle), 'Unpublished property should disappear from the public listing');
+
+    const republish = await request(`/admin/properties/${createdPropertyId}/toggle`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: `_csrf=${encodeURIComponent(toggleToken)}`
+    });
+    assert(republish.status === 200 || republish.status === 302, 'Republish toggle should succeed');
+    const relistedListing = await request('/properties');
+    assert(relistedListing.body.includes(uniquePropertyTitle), 'Republished property should reappear on the public listing');
+
     const csvResponse = await request('/admin/enquiries/export/csv');
     assert(csvResponse.status === 200, 'CSV export endpoint should respond');
     assert(csvResponse.body.includes('property_name'), 'CSV export missing headers');
@@ -248,6 +293,15 @@ async function main() {
     const xlsxResponse = await request('/admin/enquiries/export/xlsx');
     assert(xlsxResponse.status === 200, 'XLSX export endpoint should respond');
     assert(xlsxResponse.headers.get('content-type').includes('spreadsheetml'), 'XLSX export should return spreadsheet content type');
+
+    const deleteProperty = await request(`/admin/properties/${createdPropertyId}/delete`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: `_csrf=${encodeURIComponent(toggleToken)}`
+    });
+    assert(deleteProperty.status === 200 || deleteProperty.status === 302, 'Property delete flow should succeed');
+    const afterDeleteListing = await request('/properties');
+    assert(!afterDeleteListing.body.includes(uniquePropertyTitle), 'Deleted property should disappear from the public listing');
 
     console.log('Verification checks passed');
   } finally {
