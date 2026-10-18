@@ -9,4 +9,6 @@ data/*.db-*
 public/uploads/
 public/images/*.png
 public/images/*.webp
+!public/images/project-elevation-modern.webp
+!public/images/project-villa-contemporary.webp
 public/images/*.ico
