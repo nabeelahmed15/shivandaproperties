@@ -521,7 +521,7 @@ app.post('/admin/properties/:id/toggle', requireAdmin, csrfProtection, async (re
   const property = await db.prepare('SELECT * FROM properties WHERE id = ?').get(req.params.id);
   if (!property) return res.status(404).send('Property not found');
   const nextValue = property.is_published ? 0 : 1;
-  await db.prepare('UPDATE properties SET is_published = ?, updated_at = datetime("now") WHERE id = ?').run(nextValue, property.id);
+  await db.prepare(`UPDATE properties SET is_published = ?, updated_at = datetime('now') WHERE id = ?`).run(nextValue, property.id);
   res.redirect('/admin#properties');
 });
 
@@ -617,7 +617,7 @@ app.post('/admin/enquiries/:id/status', requireAdmin, csrfProtection, async (req
   const status = String(req.body.status || '').trim();
   if (!validStatus.includes(status)) return res.status(400).send('Invalid status');
 
-  await db.prepare('UPDATE enquiries SET status = ?, updated_at = datetime("now") WHERE id = ?').run(status, req.params.id);
+  await db.prepare(`UPDATE enquiries SET status = ?, updated_at = datetime('now') WHERE id = ?`).run(status, req.params.id);
   const updated = await db.prepare('SELECT * FROM enquiries WHERE id = ?').get(req.params.id);
   await saveEnquiry(updated);
   res.redirect('/admin#enquiries');
