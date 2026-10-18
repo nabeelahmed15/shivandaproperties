@@ -5,6 +5,7 @@ functions = "netlify/functions"
 
 [functions]
 node_bundler = "esbuild"
+external_node_modules = ["better-sqlite3"]
 included_files = ["views/**", "public/**", "data/schema.postgres.sql"]
 
 [[redirects]]

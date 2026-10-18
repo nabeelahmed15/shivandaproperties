@@ -4,6 +4,7 @@ const express = require('express');
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 const bcrypt = require('bcrypt');
 const cookieSession = require('cookie-session');
 const helmet = require('helmet');
@@ -23,14 +24,20 @@ if (runningInFunction) {
   const requiredEnvironment = ['DATABASE_URL', 'SESSION_SECRET', 'ADMIN_EMAIL', 'ADMIN_PASSWORD'];
   const missingEnvironment = requiredEnvironment.filter((key) => !process.env[key]);
   if (missingEnvironment.length) {
-    throw new Error(`Missing Netlify environment variables: ${missingEnvironment.join(', ')}`);
+    console.warn(
+      `[shivanda] Missing Netlify environment variables: ${missingEnvironment.join(', ')}. ` +
+      'Falling back to defaults; set them in the Netlify dashboard (Site configuration > Environment variables) ' +
+      'for persistent data and secure credentials.'
+    );
   }
 }
 
 const app = express();
 const port = Number(process.env.PORT || 3000);
 const rootDir = process.env.NETLIFY ? process.cwd() : __dirname;
-const uploadsDir = process.env.UPLOADS_DIR || path.join(rootDir, 'public', 'uploads');
+const uploadsDir = process.env.UPLOADS_DIR || (runningInFunction && !process.env.CLOUDINARY_URL
+  ? path.join(os.tmpdir(), 'shivanda-uploads')
+  : path.join(rootDir, 'public', 'uploads'));
 
 if (!process.env.CLOUDINARY_URL) fs.mkdirSync(uploadsDir, { recursive: true });
 const dbReady = initializeDatabase();
