@@ -236,7 +236,7 @@ app.get('/', async (req, res) => {
   })));
   const faqs = await db.prepare('SELECT * FROM faqs ORDER BY sort_order, id').all();
   const testimonials = await db.prepare('SELECT * FROM testimonials ORDER BY id DESC').all();
-  const gallery = await db.prepare('SELECT * FROM projects_gallery ORDER BY id DESC LIMIT 6').all();
+  const gallery = await db.prepare('SELECT * FROM projects_gallery ORDER BY id DESC LIMIT 12').all();
 
   res.render('index', {
     title: 'Shivanda Properties & Construction | Real Estate and Construction in Bengaluru',
@@ -346,7 +346,7 @@ app.get('/construction', async (req, res) => {
     ...pkg,
     specs: await db.prepare('SELECT * FROM package_specs WHERE package_id = ? ORDER BY sort_order, id').all(pkg.id)
   })));
-  const gallery = await db.prepare('SELECT * FROM projects_gallery ORDER BY id DESC LIMIT 6').all();
+  const gallery = await db.prepare('SELECT * FROM projects_gallery ORDER BY id DESC LIMIT 12').all();
 
   res.render('construction', {
     title: 'Construction Packages',

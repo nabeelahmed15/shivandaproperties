@@ -11,4 +11,9 @@ public/images/*.png
 public/images/*.webp
 !public/images/project-elevation-modern.webp
 !public/images/project-villa-contemporary.webp
+!public/images/project-elevation-vivid.webp
+!public/images/project-residence-slate.webp
+!public/images/project-residence-terrace.webp
+!public/images/project-elevation-jaali.webp
+!public/images/project-elevation-lattice.webp
 public/images/*.ico
