@@ -8,6 +8,25 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  const siteHeader = document.querySelector('.site-header');
+  if (siteHeader) {
+    let lastScrollY = window.scrollY;
+    window.addEventListener('scroll', () => {
+      const currentY = Math.round(window.scrollY);
+      if (currentY === lastScrollY) return;
+      const scrollingDown = currentY > lastScrollY;
+      lastScrollY = currentY;
+      const menuOpen = Boolean(mobileNav && mobileNav.style.display === 'flex');
+      if (menuOpen || currentY <= 160) {
+        siteHeader.classList.remove('header-hidden');
+      } else if (scrollingDown) {
+        siteHeader.classList.add('header-hidden');
+      } else {
+        siteHeader.classList.remove('header-hidden');
+      }
+    }, { passive: true });
+  }
+
   const faqButtons = document.querySelectorAll('.faq-item button');
   faqButtons.forEach((button) => {
     button.addEventListener('click', () => {

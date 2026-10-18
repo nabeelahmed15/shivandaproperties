@@ -10,6 +10,7 @@ public/uploads/
 public/images/*.png
 public/images/*.webp
 !public/images/project-elevation-modern.webp
+!public/images/logo-nav.png
 !public/images/project-villa-contemporary.webp
 !public/images/project-elevation-vivid.webp
 !public/images/project-residence-slate.webp
