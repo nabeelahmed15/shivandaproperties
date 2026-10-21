@@ -8,6 +8,11 @@
     "dev": "node --watch server.js",
     "seed": "node seed.js",
     "migrate:cloud": "node scripts/migrate-to-supabase.js",
+    "db:check": "node scripts/db-check.js",
+    "db:backup": "node scripts/backup.js",
+    "packages:sync": "node scripts/sync-packages.js",
+    "whatsapp:test": "node scripts/whatsapp-test.js",
+    "security:check": "node scripts/security-check.js",
     "prepare-assets": "node scripts/prepare-assets.js",
     "test": "node tests/verify.js"
   },

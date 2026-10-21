@@ -63,7 +63,7 @@
         <div class="field-row">
           <div class="form-group">
             <label for="hero-phone">Phone</label>
-            <input id="hero-phone" name="phone" required type="tel" inputmode="tel" pattern="^(?:\+?91[ -]?|0)?[6-9]\d{4}[ -]?\d{5}$" placeholder="+91 98765 43210" />
+            <input id="hero-phone" name="phone" required type="tel" inputmode="tel" pattern="^(?:\+?91[ \-]?|0)?[6-9]\d{4}[ \-]?\d{5}$" placeholder="+91 98765 43210" />
           </div>
           <div class="form-group">
             <label for="hero-service">Service</label>
@@ -130,15 +130,18 @@
     <div class="package-grid">
       <% packages.forEach((pkg, index) => { %>
         <article class="package-card <%= index === 1 ? 'highlight' : '' %>">
-          <div class="package-rate">₹<%= pkg.rate %><span style="font-size: 0.9rem;">/sq ft</span></div>
+          <div class="package-rate">₹<%= Number(pkg.rate).toLocaleString('en-IN') %><span style="font-size: 0.9rem;">/sq ft</span></div>
           <% if (pkg.badge) { %><div class="badge" style="margin-top: 0.7rem;"><%= pkg.badge %></div><% } %>
           <h3><%= pkg.name %></h3>
           <ul class="spec-list">
-            <% pkg.specs.slice(0, 4).forEach((spec) => { %>
-              <li><span><%= spec.label %></span><span>Included</span></li>
+            <% pkg.groups.slice(0, 4).forEach((group) => { %>
+              <li><span><%= group.name %></span><span><%= group.items.length %> specs</span></li>
             <% }) %>
           </ul>
-          <button class="btn btn-primary open-enquiry" data-interest="<%= pkg.name %>" type="button">Enquire Now</button>
+          <a class="btn btn-primary" href="/contact?interest=<%= encodeURIComponent(pkg.name) %>">Enquire Now</a>
+          <p style="margin: 0.75rem 0 0; text-align: center;">
+            <a href="/construction#packages" style="font-size: 0.86rem; color: var(--gold-ink); font-weight: 600;">See full <%= pkg.name %> sheet →</a>
+          </p>
         </article>
       <% }) %>
     </div>

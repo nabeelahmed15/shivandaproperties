@@ -15,8 +15,22 @@ const sharp = require('sharp');
 const z = require('zod');
 const ExcelJS = require('exceljs');
 const cloudinary = require('cloudinary').v2;
-const { db, initializeDatabase, readSettings, setSetting } = require('./lib/db');
+const { db, initializeDatabase, readSettings, setSetting, databaseReport } = require('./lib/db');
+const {
+  dailyBackup,
+  collectSnapshot,
+  backupSummary,
+  restoreEnquiriesFromLatestBackup
+} = require('./lib/backup');
+const { resolveSessionSecret, securityReport, isProductionLike } = require('./lib/security');
 const { saveEnquiry, removeEnquiry, rehydrate } = require('./lib/enquiry-store');
+const { groupSpecs } = require('./lib/package-specs');
+const {
+  sendEnquiryAlert,
+  getWhatsAppStatus,
+  buildVisitorMessage,
+  whatsappChatUrl
+} = require('./lib/whatsapp-notify');
 
 const runningInFunction = Boolean(
   process.env.NETLIFY || process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.LAMBDA_TASK_ROOT
@@ -41,26 +55,82 @@ const uploadsDir = process.env.UPLOADS_DIR || (runningInFunction && !process.env
   : path.join(rootDir, 'public', 'uploads'));
 
 if (!process.env.CLOUDINARY_URL) fs.mkdirSync(uploadsDir, { recursive: true });
-const dbReady = initializeDatabase().then(() => rehydrate(db));
+const dbReady = initializeDatabase()
+  .then(() => rehydrate(db))
+  .then(async () => {
+    // If the database comes back empty (reset, or a swapped connection string),
+    // put the enquiries from the newest snapshot back so they are not lost.
+    const restored = await restoreEnquiriesFromLatestBackup();
+    if (restored && restored.restored > 0) {
+      console.log(`[shivanda] Restored ${restored.restored} enquir${restored.restored === 1 ? 'y' : 'ies'} from backup ${restored.source}.`);
+    }
+    return restored;
+  });
+
+// Free, self-hosted safety net: one JSON snapshot per day in the local backups
+// folder (already synced by OneDrive). Never blocks or breaks start-up.
+dbReady
+  .then(() => dailyBackup())
+  .then((result) => {
+    if (result && !result.skipped) console.log(`[shivanda] Daily backup written to ${result.file}`);
+  })
+  .catch((error) => console.warn('[shivanda] Daily backup skipped:', error && error.message));
 
 const siteSettings = () => readSettings();
 
 app.set('view engine', 'ejs');
 app.engine('ejs', require('ejs').__express);
 app.set('views', path.join(rootDir, 'views'));
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
+// Cap request sizes so a huge body cannot tie up the server.
+app.use(express.urlencoded({ extended: true, limit: '1mb', parameterLimit: 2000 }));
+app.use(express.json({ limit: '1mb' }));
 
 app.use(helmet({
-  contentSecurityPolicy: false,
+  contentSecurityPolicy: {
+    useDefaults: false,
+    directives: {
+      defaultSrc: ["'self'"],
+      baseUri: ["'self'"],
+      objectSrc: ["'none'"],
+      // Nobody may frame the site (clickjacking protection).
+      frameAncestors: ["'none'"],
+      formAction: ["'self'"],
+      // Inline styles/scripts are used throughout the templates and admin forms.
+      scriptSrc: ["'self'", "'unsafe-inline'", 'https://maps.googleapis.com', 'https://maps.gstatic.com'],
+      styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+      fontSrc: ["'self'", 'data:', 'https://fonts.gstatic.com'],
+      // Unsplash is listed because the seeded property photos are hosted there;
+      // photos uploaded through the admin panel go to Cloudinary.
+      imgSrc: [
+        "'self'",
+        'data:',
+        'blob:',
+        'https://res.cloudinary.com',
+        'https://images.unsplash.com',
+        'https://maps.gstatic.com',
+        'https://maps.googleapis.com'
+      ],
+      frameSrc: ['https://maps.google.com', 'https://www.google.com'],
+      connectSrc: ["'self'"],
+      ...(isProductionLike() ? { upgradeInsecureRequests: [] } : {})
+    }
+  },
   crossOriginEmbedderPolicy: false,
-  crossOriginResourcePolicy: { policy: 'cross-origin' }
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' }
 }));
 
 app.set('trust proxy', 1);
+
+// A weak or missing secret must never quietly sign real admin sessions.
+const sessionSecret = resolveSessionSecret();
+if (sessionSecret.weak) {
+  console.warn(`[shivanda] SECURITY: ${sessionSecret.reason}`);
+}
+
 app.use(cookieSession({
   name: 'shivanda.session',
-  keys: [process.env.SESSION_SECRET || 'shivanda-development-secret'],
+  keys: [sessionSecret.secret],
   maxAge: 1000 * 60 * 60 * 8,
   httpOnly: true,
   sameSite: 'lax',
@@ -77,6 +147,13 @@ app.use(async (req, res, next) => {
 
 app.use(express.static(path.join(rootDir, 'public'), { maxAge: '30d' }));
 if (!process.env.CLOUDINARY_URL) app.use('/uploads', express.static(uploadsDir));
+
+// Records are only ever addressed by numeric id, so a malformed id can never
+// reach a query.
+app.param('id', (req, res, next, value) => {
+  if (!/^\d+$/.test(String(value))) return res.status(400).send('Invalid id.');
+  return next();
+});
 
 const csrfProtection = csrf();
 app.use((req, res, next) => {
@@ -140,6 +217,17 @@ function formatPrice(value) {
   }
   const lakh = amount / 100000;
   return `₹${lakh.toFixed(2).replace(/\.00$/, '')} L`;
+}
+
+function formatWhen(value) {
+  if (!value) return '—';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value).slice(0, 16).replace('T', ' ');
+  return new Intl.DateTimeFormat('en-IN', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+    timeZone: 'Asia/Kolkata'
+  }).format(date);
 }
 
 async function generateCardImage(property) {
@@ -231,10 +319,10 @@ function propertyListQuery(whereClause = 'WHERE p.is_published = 1') {
 app.get('/', async (req, res) => {
   const properties = (await propertyListQuery('WHERE p.is_published = 1').all()).slice(0, 4);
   const packages = await db.prepare('SELECT * FROM packages WHERE active = 1 ORDER BY id').all();
-  const packagesWithSpecs = await Promise.all(packages.map(async (pkg) => ({
-    ...pkg,
-    specs: await db.prepare('SELECT * FROM package_specs WHERE package_id = ? ORDER BY sort_order, id').all(pkg.id)
-  })));
+  const packagesWithSpecs = await Promise.all(packages.map(async (pkg) => {
+    const specs = await db.prepare('SELECT * FROM package_specs WHERE package_id = ? ORDER BY sort_order, id').all(pkg.id);
+    return { ...pkg, specs, groups: groupSpecs(specs) };
+  }));
   const faqs = await db.prepare('SELECT * FROM faqs ORDER BY sort_order, id').all();
   const testimonials = await db.prepare('SELECT * FROM testimonials ORDER BY id DESC').all();
   const gallery = await db.prepare('SELECT * FROM projects_gallery ORDER BY id DESC LIMIT 12').all();
@@ -343,10 +431,10 @@ app.get('/property/:slug', async (req, res) => {
 
 app.get('/construction', async (req, res) => {
   const packages = await db.prepare('SELECT * FROM packages WHERE active = 1 ORDER BY id').all();
-  const packagesWithSpecs = await Promise.all(packages.map(async (pkg) => ({
-    ...pkg,
-    specs: await db.prepare('SELECT * FROM package_specs WHERE package_id = ? ORDER BY sort_order, id').all(pkg.id)
-  })));
+  const packagesWithSpecs = await Promise.all(packages.map(async (pkg) => {
+    const specs = await db.prepare('SELECT * FROM package_specs WHERE package_id = ? ORDER BY sort_order, id').all(pkg.id);
+    return { ...pkg, specs, groups: groupSpecs(specs) };
+  }));
   const gallery = await db.prepare('SELECT * FROM projects_gallery ORDER BY id DESC LIMIT 12').all();
 
   res.render('construction', {
@@ -357,8 +445,30 @@ app.get('/construction', async (req, res) => {
   });
 });
 
-app.get('/contact', (req, res) => {
-  res.render('contact', { title: 'Contact Shivanda' });
+app.get('/contact', async (req, res) => {
+  // Enquiry buttons link here with the package or property the visitor tapped,
+  // so the form and the saved enquiry both carry that context.
+  const interest = String(req.query.interest || '').trim().slice(0, 100);
+  let packageName = '';
+  let interestedProperty = '';
+
+  if (interest) {
+    const pkg = await db.prepare('SELECT name FROM packages WHERE active = 1 AND name = ?').get(interest);
+    if (pkg) {
+      packageName = pkg.name;
+    } else {
+      const property = await db.prepare('SELECT title FROM properties WHERE title = ? AND is_published = 1').get(interest);
+      if (property) interestedProperty = property.title;
+    }
+  }
+
+  res.render('contact', {
+    title: 'Contact Shivanda',
+    interest,
+    packageName,
+    interestedProperty,
+    serviceType: packageName ? 'Construction' : (interestedProperty ? 'Buy' : 'Buy')
+  });
 });
 
 app.get('/admin/login', (req, res) => {
@@ -407,12 +517,14 @@ app.get('/admin', requireAdmin, async (req, res) => {
     ORDER BY p.created_at DESC
   `).all();
 
-  const recentEnquiries = await db.prepare('SELECT * FROM enquiries ORDER BY created_at DESC LIMIT 10').all();
+  // Show every enquiry, newest first: limiting this to the last few rows made
+  // real enquiries look missing whenever the list filled up with test entries.
+  const recentEnquiries = await db.prepare('SELECT * FROM enquiries ORDER BY created_at DESC, id DESC').all();
   const packages = await db.prepare('SELECT * FROM packages ORDER BY id').all();
-  const packageRows = await Promise.all(packages.map(async (pkg) => ({
-    ...pkg,
-    specs: await db.prepare('SELECT * FROM package_specs WHERE package_id = ? ORDER BY sort_order, id').all(pkg.id)
-  })));
+  const packageRows = await Promise.all(packages.map(async (pkg) => {
+    const specs = await db.prepare('SELECT * FROM package_specs WHERE package_id = ? ORDER BY sort_order, id').all(pkg.id);
+    return { ...pkg, specs, groups: groupSpecs(specs) };
+  }));
   const testimonials = await db.prepare('SELECT * FROM testimonials ORDER BY id DESC').all();
   const faqs = await db.prepare('SELECT * FROM faqs ORDER BY sort_order, id').all();
   const gallery = await db.prepare('SELECT * FROM projects_gallery ORDER BY id DESC').all();
@@ -425,8 +537,13 @@ app.get('/admin', requireAdmin, async (req, res) => {
     byStatus: await db.prepare('SELECT status, COUNT(*) AS count FROM enquiries GROUP BY status').all()
   };
 
+  const notice = req.session.adminNotice || null;
+  // Assign null rather than deleting: cookie-session only persists changes it sees.
+  req.session.adminNotice = null;
+
   res.render('admin-dashboard', {
     title: 'Shivanda Admin',
+    notice,
     overview,
     properties: propertyList,
     enquiries: recentEnquiries,
@@ -435,36 +552,86 @@ app.get('/admin', requireAdmin, async (req, res) => {
     faqs,
     gallery,
     settings,
+    storage: await databaseReport(),
+    backup: backupSummary(),
+    security: await securityReport(),
+    sessionSecretWeak: sessionSecret.weak,
+    whatsappAlerts: getWhatsAppStatus(settings),
+    whatsappChatUrl,
+    formatWhen,
     formatPrice
   });
 });
 
+function propertySchema(defaults = {}) {
+  return z.object({
+    title: z.string().min(3),
+    price: z.coerce.number().min(100000),
+    type: z.enum(['Apartment', 'Villa', 'Plot', 'Commercial', 'Independent House']),
+    status: z.enum(['Available', 'Sold', 'Rented']),
+    locality: z.string().min(2),
+    address: z.string().min(8),
+    description: z.string().min(15),
+    bedrooms: z.coerce.number().int().min(0).optional().default(0),
+    bathrooms: z.coerce.number().int().min(0).optional().default(0),
+    area: z.coerce.number().int().min(0).optional().default(0),
+    facing: z.string().optional().default('East'),
+    floor: z.string().optional().default('Ground'),
+    possession_date: z.string().optional().default(''),
+    rera_id: z.string().optional().default(''),
+    latitude: z.coerce.number().optional().default(12.9716),
+    longitude: z.coerce.number().optional().default(77.5946),
+    is_published: z.coerce.number().optional().default(defaults.is_published ?? 1),
+    amenities: z.string().optional().default('')
+  });
+}
+
+function normalizePropertyBody(body) {
+  const cleaned = { ...body };
+  for (const key of ['bedrooms', 'bathrooms', 'area', 'latitude', 'longitude', 'is_published']) {
+    if (cleaned[key] === '' || cleaned[key] == null) delete cleaned[key];
+  }
+  return cleaned;
+}
+
+const PROPERTY_FIELD_MESSAGES = {
+  title: 'Title must be at least 3 characters.',
+  price: 'Price must be at least ₹1,00,000 - enter the full amount in rupees (for example 8500000).',
+  type: 'Choose a valid property type.',
+  status: 'Choose a valid status.',
+  locality: 'Locality must be at least 2 characters.',
+  address: 'Address must be at least 8 characters.',
+  description: 'Description must be at least 15 characters.',
+  bedrooms: 'Bedrooms must be a whole number of 0 or more.',
+  bathrooms: 'Bathrooms must be a whole number of 0 or more.',
+  area: 'Area must be a whole number of square feet (enter 0 if it is not known).',
+  latitude: 'Latitude must be a valid number.',
+  longitude: 'Longitude must be a valid number.'
+};
+
+function propertyErrorMessage(fieldErrors) {
+  const details = Object.keys(fieldErrors || {})
+    .map((field) => PROPERTY_FIELD_MESSAGES[field] || `${field} is invalid.`)
+    .join(' ');
+  return `Property not saved. ${details}`;
+}
+
+// The admin property form is a regular HTML form, so a raw JSON 400 would be unreadable.
+// Keep JSON for API callers, and show the real problem as a notice on the dashboard instead.
+function sendPropertyValidationError(req, res, fieldErrors) {
+  const message = propertyErrorMessage(fieldErrors);
+  if (req.accepts(['html', 'json']) === 'json') {
+    return res.status(400).json({ success: false, error: message, fields: fieldErrors || {} });
+  }
+  req.session.adminNotice = { type: 'error', text: message };
+  return res.redirect('/admin#properties');
+}
+
 app.post('/admin/properties', requireAdmin, uploadConfig.array('images', 8), csrfProtection, async (req, res) => {
   try {
-    const schema = z.object({
-      title: z.string().min(3),
-      price: z.coerce.number().min(100000),
-      type: z.enum(['Apartment', 'Villa', 'Plot', 'Commercial', 'Independent House']),
-      status: z.enum(['Available', 'Sold', 'Rented']),
-      locality: z.string().min(2),
-      address: z.string().min(8),
-      description: z.string().min(15),
-      bedrooms: z.coerce.number().int().min(0).optional().default(0),
-      bathrooms: z.coerce.number().int().min(0).optional().default(0),
-      area: z.coerce.number().int().min(200).optional().default(0),
-      facing: z.string().optional().default('East'),
-      floor: z.string().optional().default('Ground'),
-      possession_date: z.string().optional().default(''),
-      rera_id: z.string().optional().default(''),
-      latitude: z.coerce.number().optional().default(12.9716),
-      longitude: z.coerce.number().optional().default(77.5946),
-      is_published: z.coerce.number().optional().default(1),
-      amenities: z.string().optional().default('')
-    });
-
-    const parsed = schema.safeParse(req.body);
+    const parsed = propertySchema().safeParse(normalizePropertyBody(req.body));
     if (!parsed.success) {
-      return res.status(400).json({ success: false, error: 'Please check the property form for missing or invalid fields.' });
+      return sendPropertyValidationError(req, res, parsed.error.flatten().fieldErrors);
     }
 
     const data = parsed.data;
@@ -510,6 +677,10 @@ app.post('/admin/properties', requireAdmin, uploadConfig.array('images', 8), csr
       await saveUploadedImages(req.files, result.lastInsertRowid);
     }
 
+    req.session.adminNotice = {
+      type: 'success',
+      text: data.is_published ? 'Property saved and published.' : 'Property saved as a draft.'
+    };
     return res.redirect('/admin#properties');
   } catch (error) {
     console.error(error);
@@ -542,30 +713,9 @@ app.post('/admin/properties/:id/update', requireAdmin, uploadConfig.array('image
     const property = await db.prepare('SELECT * FROM properties WHERE id = ?').get(req.params.id);
     if (!property) return res.status(404).send('Property not found');
 
-    const schema = z.object({
-      title: z.string().min(3),
-      price: z.coerce.number().min(100000),
-      type: z.enum(['Apartment', 'Villa', 'Plot', 'Commercial', 'Independent House']),
-      status: z.enum(['Available', 'Sold', 'Rented']),
-      locality: z.string().min(2),
-      address: z.string().min(8),
-      description: z.string().min(15),
-      bedrooms: z.coerce.number().int().min(0).optional().default(0),
-      bathrooms: z.coerce.number().int().min(0).optional().default(0),
-      area: z.coerce.number().int().min(200).optional().default(0),
-      facing: z.string().optional().default('East'),
-      floor: z.string().optional().default('Ground'),
-      possession_date: z.string().optional().default(''),
-      rera_id: z.string().optional().default(''),
-      latitude: z.coerce.number().optional().default(12.9716),
-      longitude: z.coerce.number().optional().default(77.5946),
-      is_published: z.coerce.number().optional().default(property.is_published),
-      amenities: z.string().optional().default('')
-    });
-
-    const parsed = schema.safeParse(req.body);
+    const parsed = propertySchema({ is_published: property.is_published }).safeParse(normalizePropertyBody(req.body));
     if (!parsed.success) {
-      return res.status(400).json({ success: false, error: 'Invalid property details.' });
+      return sendPropertyValidationError(req, res, parsed.error.flatten().fieldErrors);
     }
 
     const data = parsed.data;
@@ -651,13 +801,26 @@ app.post('/admin/packages/:id', requireAdmin, csrfProtection, async (req, res) =
 });
 
 app.post('/admin/packages/:id/specs', requireAdmin, csrfProtection, async (req, res) => {
-  await db.prepare('DELETE FROM package_specs WHERE package_id = ?').run(req.params.id);
-  const entries = String(req.body.specs || '').split('\n').map((line) => line.trim()).filter(Boolean);
+  const packageId = Number(req.params.id);
+  if (!Number.isInteger(packageId) || packageId <= 0) return res.status(400).send('Invalid package.');
+
+  await db.prepare('DELETE FROM package_specs WHERE package_id = ?').run(packageId);
+  const entries = String(req.body.specs || '')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .slice(0, 400);
+
   for (const [index, line] of entries.entries()) {
-    const [label, ...rest] = line.split('|');
-    const content = (rest.join('|') || 'Placeholder: add specification details').trim();
-    await db.prepare('INSERT INTO package_specs (package_id, label, content, sort_order) VALUES (?, ?, ?, ?)')
-      .run(req.params.id, (label || `Spec ${index + 1}`).trim(), content, index);
+    // "Section | Item | Detail". Two-part lines keep the old "Item | Detail" shape.
+    const parts = line.split('|').map((part) => part.trim());
+    const hasSection = parts.length >= 3;
+    const group = hasSection ? parts[0] || null : null;
+    const label = (hasSection ? parts[1] : parts[0]) || `Spec ${index + 1}`;
+    const content = (hasSection ? parts.slice(2).join(' | ') : parts.slice(1).join(' | ')) || 'Included';
+
+    await db.prepare('INSERT INTO package_specs (package_id, group_name, label, content, sort_order) VALUES (?, ?, ?, ?, ?)')
+      .run(packageId, group, label, content, index);
   }
   res.redirect('/admin#packages');
 });
@@ -746,7 +909,7 @@ app.post('/api/enquiry', enquiryLimiter, csrfProtection, async (req, res) => {
     budgetRange: z.string().optional(),
     message: z.string().min(10).max(500),
     propertyId: z.coerce.number().int().positive().optional(),
-    packageName: z.string().optional(),
+    packageName: z.string().max(80).optional(),
     website: z.string().max(0).optional().default('')
   });
 
@@ -773,7 +936,11 @@ app.post('/api/enquiry', enquiryLimiter, csrfProtection, async (req, res) => {
     }
 
     const property = parsed.data.propertyId ? await db.prepare('SELECT * FROM properties WHERE id = ?').get(parsed.data.propertyId) : null;
-    const propertyName = property ? property.title : (parsed.data.interestedProperty || 'General enquiry');
+    // A package enquiry keeps its package name in package_name, so the admin
+    // panel can show which package the visitor tapped instead of "General".
+    const propertyName = property
+      ? property.title
+      : (parsed.data.interestedProperty || (parsed.data.packageName ? null : 'General enquiry'));
 
     await db.prepare(`
       INSERT INTO enquiries (
@@ -795,7 +962,18 @@ app.post('/api/enquiry', enquiryLimiter, csrfProtection, async (req, res) => {
     const saved = await db.prepare('SELECT * FROM enquiries WHERE phone = ? ORDER BY id DESC LIMIT 1').get(parsed.data.phone);
     await saveEnquiry(saved);
 
-    return res.json({ success: true, message: 'Your enquiry has been sent successfully. We will contact you shortly.' });
+    // Forward the enquiry to the business WhatsApp number. This never throws and
+    // never blocks the visitor's success message.
+    const settings = await siteSettings();
+    const alert = await sendEnquiryAlert(saved, settings);
+
+    const businessNumber = settings.whatsapp || settings.phone;
+    return res.json({
+      success: true,
+      message: 'Your enquiry has been sent. Our team will contact you shortly.',
+      whatsappDelivered: Boolean(alert.sent),
+      whatsappUrl: whatsappChatUrl(businessNumber, buildVisitorMessage(saved, settings))
+    });
   } catch (error) {
     console.error('Enquiry creation error:', error);
     return res.status(500).json({ success: false, error: 'We could not process your enquiry right now. Please try again later.' });
@@ -860,6 +1038,59 @@ app.get('/admin/enquiries/export/xlsx', requireAdmin, async (req, res) => {
   res.send(buffer);
 });
 
+// One-click proof that enquiry alerts reach the business WhatsApp number.
+app.post('/admin/whatsapp/test', requireAdmin, csrfProtection, async (req, res) => {
+  const settings = await siteSettings();
+  const status = getWhatsAppStatus(settings);
+
+  if (!status.provider) {
+    req.session.adminNotice = {
+      type: 'error',
+      text: 'No WhatsApp provider is configured yet, so no alert could be sent. Add CALLMEBOT_APIKEY, WhatsApp Cloud API credentials or Twilio credentials to your environment, then try again.'
+    };
+    return res.redirect('/admin#enquiries');
+  }
+
+  if (!status.configured) {
+    req.session.adminNotice = {
+      type: 'error',
+      text: 'A WhatsApp provider is configured, but there is no number to send to. Save your WhatsApp number under Settings, or set WHATSAPP_TO.'
+    };
+    return res.redirect('/admin#enquiries');
+  }
+
+  const result = await sendEnquiryAlert({
+    buyer_name: 'Test alert',
+    phone: settings.whatsapp || settings.phone || '',
+    service_type: 'Enquiry alerts',
+    property_name: 'Website test message',
+    message: 'This is a test alert from your website. If you can read this on WhatsApp, every new enquiry will reach you here.',
+    created_at: new Date().toISOString()
+  }, settings);
+
+  req.session.adminNotice = result.sent
+    ? { type: 'success', text: `Test alert sent to ${status.recipient} via ${status.provider}. Check that WhatsApp account.` }
+    : { type: 'error', text: `The test alert could not be sent via ${status.provider}: ${result.reason}` };
+
+  return res.redirect('/admin#enquiries');
+});
+
+// Download a complete JSON snapshot straight from the admin dashboard. Works
+// even where the file system is read-only, because nothing is written.
+app.get('/admin/backup.json', requireAdmin, async (req, res) => {
+  try {
+    const snapshot = await collectSnapshot();
+    const filename = `shivanda-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Cache-Control', 'no-store');
+    res.send(JSON.stringify(snapshot, null, 2));
+  } catch (error) {
+    console.error('Backup export error:', error);
+    res.status(500).send('Unable to build the backup right now.');
+  }
+});
+
 app.get('/sitemap.xml', (req, res) => {
   const urls = [
     '/',
@@ -874,6 +1105,10 @@ app.get('/sitemap.xml', (req, res) => {
   res.type('application/xml').send(xml);
 });
 
+app.get('/favicon.ico', (req, res) => {
+  res.redirect(302, '/images/favicon-32.png');
+});
+
 app.get('/robots.txt', (req, res) => {
   res.type('text/plain').send('User-agent: *\nAllow: /\nSitemap: https://shivanda.in/sitemap.xml\n');
 });
@@ -883,6 +1118,24 @@ app.use((req, res) => {
 });
 
 app.use((error, req, res, next) => {
+  const wantsJson = req.path.startsWith('/api/') || Boolean(req.is('application/json'));
+
+  // A missing or stale CSRF token is a client error, not a server fault: it must
+  // never surface as a 500 or be silently ignored.
+  if (error && (error.code === 'EBADCSRFTOKEN' || error.name === 'ForbiddenError' || error.status === 403)) {
+    const message = 'This form expired or was submitted from another site. Please reload the page and try again.';
+    if (wantsJson) return res.status(403).json({ success: false, error: message });
+    return res.status(403).type('text/plain').send(message);
+  }
+
+  // Reject oversized or malformed bodies with the right status code.
+  if (error && (error.type === 'entity.too.large' || error.type === 'entity.parse.failed' || error.status === 413)) {
+    const status = error.status || 413;
+    const message = 'That request was too large or malformed.';
+    if (wantsJson) return res.status(status).json({ success: false, error: message });
+    return res.status(status).type('text/plain').send(message);
+  }
+
   console.error('Unhandled error:', error);
   res.locals = res.locals || {};
   res.locals.siteSettings = res.locals.siteSettings || {};

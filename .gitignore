@@ -1,6 +1,8 @@
 node_modules/
 .netlify/
 .env
+# Backups contain customer names and phone numbers - never commit them.
+backups/
 cookie.txt
 .DS_Store
 *.log

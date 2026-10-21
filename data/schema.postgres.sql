@@ -48,6 +48,7 @@ CREATE TABLE IF NOT EXISTS packages (
 CREATE TABLE IF NOT EXISTS package_specs (
   id BIGSERIAL PRIMARY KEY,
   package_id BIGINT NOT NULL REFERENCES packages(id) ON DELETE CASCADE,
+  group_name TEXT,
   label TEXT NOT NULL,
   content TEXT NOT NULL,
   sort_order INTEGER DEFAULT 0

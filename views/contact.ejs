@@ -23,6 +23,14 @@
       <h2>Send an enquiry</h2>
       <form data-enquiry-form>
         <input type="hidden" name="website" value="" />
+        <% if (packageName) { %><input type="hidden" name="packageName" value="<%= packageName %>" /><% } %>
+        <% if (interestedProperty) { %><input type="hidden" name="interestedProperty" value="<%= interestedProperty %>" /><% } %>
+        <% if (interest) { %>
+          <div class="form-group">
+            <label>You are enquiring about</label>
+            <input value="<%= packageName ? packageName + ' Package' : interest %>" readonly />
+          </div>
+        <% } %>
         <div class="form-group">
           <label for="contact-name">Name</label>
           <input id="contact-name" name="name" required />
@@ -30,18 +38,14 @@
         <div class="field-row">
           <div class="form-group">
             <label for="contact-phone">Phone</label>
-            <input id="contact-phone" name="phone" required type="tel" inputmode="tel" pattern="^(?:\+?91[ -]?|0)?[6-9]\d{4}[ -]?\d{5}$" placeholder="+91 98765 43210" />
+            <input id="contact-phone" name="phone" required type="tel" inputmode="tel" pattern="^(?:\+?91[ \-]?|0)?[6-9]\d{4}[ \-]?\d{5}$" placeholder="+91 98765 43210" />
           </div>
           <div class="form-group">
             <label for="contact-service">Interested in</label>
             <select id="contact-service" name="serviceType">
-              <option>Buy</option>
-              <option>Sell</option>
-              <option>Loan</option>
-              <option>Legal</option>
-              <option>Invest</option>
-              <option>Residential Construction</option>
-              <option>Villa Construction</option>
+              <% ['Buy', 'Sell', 'Loan', 'Legal', 'Invest', 'Residential Construction', 'Villa Construction', 'Construction'].forEach((option) => { %>
+                <option<%= serviceType === option ? ' selected' : '' %>><%= option %></option>
+              <% }) %>
             </select>
           </div>
         </div>

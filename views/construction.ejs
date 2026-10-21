@@ -8,34 +8,60 @@
 
 <section class="section">
   <div class="container">
-    <div class="package-grid" id="packages">
+    <div class="package-sheets" id="packages">
       <% packages.forEach((pkg, index) => { %>
-        <article class="package-card <%= index === 1 ? 'highlight' : '' %>">
-          <div class="package-rate">₹<%= pkg.rate %><span style="font-size:0.9rem;">/sq ft</span></div>
-          <% if (pkg.badge) { %><div class="badge" style="margin-top: 0.7rem;"><%= pkg.badge %></div><% } %>
-          <h3><%= pkg.name %></h3>
-          <ul class="spec-list">
-            <% pkg.specs.forEach((spec) => { %>
-              <li><span><%= spec.label %></span><span><%= spec.content %></span></li>
+        <article class="package-sheet <%= index === 1 ? 'is-highlight' : '' %>" data-rate="<%= pkg.rate %>" data-name="<%= pkg.name %>">
+          <header class="package-sheet-head">
+            <% if (pkg.badge) { %><span class="package-sheet-badge"><%= pkg.badge %></span><% } %>
+            <h2><%= pkg.name %> Package</h2>
+            <div class="package-sheet-price">
+              Rs <%= Number(pkg.rate).toLocaleString('en-IN') %><span>/Sq.Ft.</span>
+            </div>
+          </header>
+
+          <div class="package-sheet-body">
+            <% pkg.groups.forEach((group) => { %>
+              <details class="pkg-group">
+                <summary>
+                  <span><%= group.name %></span>
+                  <span class="pkg-chevron" aria-hidden="true"></span>
+                </summary>
+                <dl class="pkg-items">
+                  <% group.items.forEach((item) => { %>
+                    <div class="pkg-item<%= /^not\s+included$/i.test(String(item.content).trim()) ? ' is-excluded' : '' %>">
+                      <dt><%= item.label %></dt>
+                      <dd><%= item.content %></dd>
+                    </div>
+                  <% }) %>
+                </dl>
+              </details>
             <% }) %>
-          </ul>
-          <button class="btn btn-primary open-enquiry" type="button" data-interest="<%= pkg.name %>">Enquire Now</button>
+          </div>
+
+          <footer class="package-sheet-foot">
+            <a class="btn btn-primary" href="/contact?interest=<%= encodeURIComponent(pkg.name) %>">Enquire about <%= pkg.name %></a>
+          </footer>
         </article>
       <% }) %>
     </div>
 
+    <p class="package-note">
+      Rates are per sq ft of built-up area and cover materials, labour and finishing up to the limits listed
+      in each section. Government approvals, plan sanction fees, compound wall, borewell and interior
+      furniture are quoted separately. Tap any section to see exactly what is included.
+    </p>
+
     <div class="service-card" style="margin-top:2rem; padding: 1.5rem;">
       <h3>Indicative estimate</h3>
-      <div class="field-row" style="margin-top: 1rem; align-items: end;">
+      <p class="muted-line" style="margin-bottom: 0.75rem;">Enter your built-up area to see the total for each package.</p>
+      <div class="field-row" style="align-items: end;">
         <div class="form-group">
           <label for="area-input">Built-up area (sq ft)</label>
-          <input id="area-input" type="number" min="400" value="1200" />
-        </div>
-        <div class="form-group">
-          <label>Estimated total</label>
-          <div id="estimate-display" class="package-rate">₹0</div>
+          <input id="area-input" type="number" min="400" step="10" value="1200" />
         </div>
       </div>
+      <div id="estimate-list" class="estimate-list" aria-live="polite"></div>
+      <noscript><p class="muted-line">Multiply the built-up area by each package rate above.</p></noscript>
     </div>
   </div>
 </section>
@@ -46,10 +72,10 @@
       <h2>Construction services</h2>
     </div>
     <div class="grid-3">
-      <article class="service-card"><h3>Residential Construction</h3><p>Custom homes, duplexes, and family living spaces designed to improve comfort and resale value.</p><button class="btn btn-secondary open-enquiry" type="button" data-interest="Residential Construction">Enquire</button></article>
-      <article class="service-card"><h3>Rental Construction</h3><p>Smart layouts and efficient finishes built for consistent occupancy and lower maintenance.</p><button class="btn btn-secondary open-enquiry" type="button" data-interest="Rental Construction">Enquire</button></article>
-      <article class="service-card"><h3>Commercial Construction</h3><p>Office and retail spaces with structured planning, zoning insight and modern fit-outs.</p><button class="btn btn-secondary open-enquiry" type="button" data-interest="Commercial Construction">Enquire</button></article>
-      <article class="service-card"><h3>Villa Construction</h3><p>Luxury villas with elegant facades, designer detailing and premium finishes.</p><button class="btn btn-secondary open-enquiry" type="button" data-interest="Villa Construction">Enquire</button></article>
+      <article class="service-card"><h3>Residential Construction</h3><p>Custom homes, duplexes, and family living spaces designed to improve comfort and resale value.</p><a class="btn btn-secondary" href="/contact?interest=Residential%20Construction">Enquire</a></article>
+      <article class="service-card"><h3>Rental Construction</h3><p>Smart layouts and efficient finishes built for consistent occupancy and lower maintenance.</p><a class="btn btn-secondary" href="/contact?interest=Rental%20Construction">Enquire</a></article>
+      <article class="service-card"><h3>Commercial Construction</h3><p>Office and retail spaces with structured planning, zoning insight and modern fit-outs.</p><a class="btn btn-secondary" href="/contact?interest=Commercial%20Construction">Enquire</a></article>
+      <article class="service-card"><h3>Villa Construction</h3><p>Luxury villas with elegant facades, designer detailing and premium finishes.</p><a class="btn btn-secondary" href="/contact?interest=Villa%20Construction">Enquire</a></article>
     </div>
   </div>
 </section>

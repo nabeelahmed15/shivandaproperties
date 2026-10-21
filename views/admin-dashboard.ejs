@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Shivanda Admin</title>
     <link rel="icon" href="/images/favicon-32.png" />
-    <link rel="stylesheet" href="/css/styles.css" />
+    <link rel="stylesheet" href="/css/styles.css?v=13" />
   </head>
   <body>
     <div class="container admin-shell">
@@ -13,6 +13,8 @@
         <div class="brand"><img src="/images/logo.png" alt="Shivanda logo" style="width:180px;" /></div>
         <nav class="side-nav">
           <a href="#overview" class="active">Overview</a>
+          <a href="#storage">Data storage</a>
+          <a href="#security">Security</a>
           <a href="#properties">Properties</a>
           <a href="#enquiries">Enquiries</a>
           <a href="#packages">Packages</a>
@@ -25,6 +27,70 @@
       </aside>
 
       <main class="card-list">
+        <% if (locals.notice && notice) { %>
+          <div class="notice <%= notice.type %>" role="alert"><%= notice.text %></div>
+        <% } %>
+
+        <section id="storage" class="info-panel">
+          <h2>Where your data is stored</h2>
+          <div class="alert-status <%= storage.persistent ? 'is-on' : 'is-off' %>" role="status">
+            <% if (storage.persistent) { %>
+              <strong><%= storage.label %></strong> &mdash; <%= storage.note %>
+            <% } else { %>
+              <strong>Warning: your data is not being saved permanently.</strong> <%= storage.note %>
+            <% } %>
+          </div>
+          <p class="muted-line">
+            <%= storage.totalRecords %> records stored
+            &middot; <%= storage.persistent ? 'Permanent storage' : 'Temporary storage' %>
+            &middot; <%= storage.writable === false ? 'Write access problem - changes may fail to save' : 'Write access confirmed' %>
+          </p>
+          <div class="field-row" style="margin-top: 1rem;">
+            <a class="btn btn-primary" href="/admin/backup.json" download>Download JSON backup</a>
+            <a class="btn btn-secondary" href="/admin/enquiries/export/xlsx" download>Download enquiries (Excel)</a>
+          </div>
+          <p class="muted-line">
+            <% if (backup.available) { %>
+              Latest snapshot saved on this computer: <strong><%= backup.name %></strong>
+              (<%= Math.max(1, Math.round(backup.sizeBytes / 1024)) %> KB, <%= formatWhen(backup.modifiedAt) %>).
+            <% } else { %>
+              No local snapshot yet. One is written automatically each day the site runs, or run <code>npm run db:backup</code>.
+            <% } %>
+            <% if (!backup.writable) { %>This environment cannot write backup files - use the download buttons above.<% } %>
+          </p>
+          <div class="stats-row">
+            <div class="stat-box"><strong><%= storage.rows.properties ?? 0 %></strong><br />Properties</div>
+            <div class="stat-box"><strong><%= storage.rows.enquiries ?? 0 %></strong><br />Enquiries</div>
+            <div class="stat-box"><strong><%= storage.rows.property_images ?? 0 %></strong><br />Property images</div>
+            <div class="stat-box"><strong><%= storage.rows.packages ?? 0 %></strong><br />Packages</div>
+          </div>
+        </section>
+
+        <section id="security" class="info-panel">
+          <h2>Security</h2>
+          <% if (security.failures.length) { %>
+            <div class="alert-status is-off" role="alert">
+              <strong><%= security.failures.length %> security item<%= security.failures.length === 1 ? '' : 's' %> need<%= security.failures.length === 1 ? 's' : '' %> attention:</strong>
+              <%= security.failures.map((check) => check.label).join(', ') %>.
+            </div>
+          <% } else { %>
+            <div class="alert-status is-on" role="status">
+              <strong>All security checks pass.</strong> <%= security.checks.length %> protections are active on this site.
+            </div>
+          <% } %>
+          <% if (sessionSecretWeak) { %>
+            <p class="muted-line">A temporary session secret is being used for this run, so admin logins reset when the server restarts. Set <code>SESSION_SECRET</code> to stop that.</p>
+          <% } %>
+          <ul class="check-list">
+            <% security.checks.forEach((check) => { %>
+              <li class="check-item is-<%= check.status %>">
+                <span class="check-badge"><%= check.status === 'pass' ? 'Pass' : (check.status === 'warn' ? 'Check' : 'Fix') %></span>
+                <span><strong><%= check.label %></strong> &mdash; <%= check.detail %></span>
+              </li>
+            <% }) %>
+          </ul>
+        </section>
+
         <section id="overview" class="info-panel">
           <h2>Overview</h2>
           <div class="stats-row">
@@ -40,23 +106,23 @@
           <form method="POST" action="/admin/properties" enctype="multipart/form-data">
             <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
             <div class="field-row">
-              <div class="form-group"><label>Title</label><input name="title" required /></div>
-              <div class="form-group"><label>Price</label><input name="price" type="number" required /></div>
+              <div class="form-group"><label>Title</label><input name="title" required minlength="3" /></div>
+              <div class="form-group"><label>Price (₹, full amount)</label><input name="price" type="number" min="100000" step="1" required placeholder="8500000" /></div>
             </div>
             <div class="field-row">
               <div class="form-group"><label>Type</label><select name="type"><option>Apartment</option><option>Villa</option><option>Plot</option><option>Commercial</option><option>Independent House</option></select></div>
               <div class="form-group"><label>Status</label><select name="status"><option>Available</option><option>Sold</option><option>Rented</option></select></div>
             </div>
             <div class="field-row">
-              <div class="form-group"><label>Locality</label><input name="locality" required /></div>
-              <div class="form-group"><label>Address</label><input name="address" required /></div>
+              <div class="form-group"><label>Locality</label><input name="locality" required minlength="2" /></div>
+              <div class="form-group"><label>Address</label><input name="address" required minlength="8" /></div>
             </div>
             <div class="field-row">
               <div class="form-group"><label>Bedrooms</label><input name="bedrooms" type="number" value="0" /></div>
               <div class="form-group"><label>Bathrooms</label><input name="bathrooms" type="number" value="0" /></div>
             </div>
             <div class="field-row">
-              <div class="form-group"><label>Area</label><input name="area" type="number" value="0" /></div>
+              <div class="form-group"><label>Area (sq ft, 0 if unknown)</label><input name="area" type="number" min="0" step="1" value="0" placeholder="1200" /></div>
               <div class="form-group"><label>Facing</label><input name="facing" value="East" /></div>
             </div>
             <div class="field-row">
@@ -72,7 +138,7 @@
               <div class="form-group"><label>Published</label><select name="is_published"><option value="1">Published</option><option value="0">Draft</option></select></div>
             </div>
             <div class="form-group"><label>Amenities</label><input name="amenities" placeholder="Gym, Security, Parking" /></div>
-            <div class="form-group"><label>Description</label><textarea name="description" required></textarea></div>
+            <div class="form-group"><label>Description</label><textarea name="description" required minlength="15"></textarea></div>
             <div class="form-group"><label>Images</label><input name="images" type="file" multiple accept="image/*" /></div>
             <button class="btn btn-primary" type="submit">Add property</button>
           </form>
@@ -100,20 +166,40 @@
         </section>
 
         <section id="enquiries" class="info-panel">
-          <h2>Enquiries</h2>
+          <h2>Enquiries <span class="count-pill"><%= enquiries.length %></span></h2>
+          <div class="alert-status <%= whatsappAlerts.configured ? 'is-on' : 'is-off' %>" role="status">
+            <% if (whatsappAlerts.configured) { %>
+              <strong>WhatsApp alerts are on.</strong> Every new enquiry is also sent to <%= whatsappAlerts.recipient %> automatically via <%= whatsappAlerts.provider %>.
+            <% } else { %>
+              <strong>WhatsApp alerts are off.</strong> New enquiries are only saved here. Add a CallMeBot key, WhatsApp Cloud API token or Twilio credentials to your environment to receive each one on WhatsApp &mdash; see the README.
+            <% } %>
+          </div>
+          <form method="POST" action="/admin/whatsapp/test" style="margin-top: 0.8rem;">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+            <button class="btn btn-secondary" type="submit">Send a test WhatsApp alert</button>
+          </form>
           <div class="field-row">
-            <a class="btn btn-secondary" href="/admin/enquiries/export/csv" target="_blank">Export CSV</a>
-            <a class="btn btn-secondary" href="/admin/enquiries/export/xlsx" target="_blank">Export Excel</a>
+            <a class="btn btn-secondary" href="/admin/enquiries/export/csv" download="shivanda-enquiries.csv">Export CSV</a>
+            <a class="btn btn-secondary" href="/admin/enquiries/export/xlsx" download="shivanda-enquiries.xlsx">Export Excel</a>
           </div>
           <div class="table-wrap" style="margin-top: 1rem;">
             <table>
-              <thead><tr><th>Name</th><th>Property</th><th>Phone</th><th>Service</th><th>Status</th><th>Actions</th></tr></thead>
+              <thead><tr><th>Received</th><th>Name</th><th>Enquiry</th><th>Phone</th><th>Service</th><th>Status</th><th>Actions</th></tr></thead>
               <tbody>
+                <% if (!enquiries.length) { %>
+                  <tr><td colspan="7" class="empty-row">No enquiries yet. New website enquiries will appear here.</td></tr>
+                <% } %>
                 <% enquiries.forEach((enquiry) => { %>
                   <tr>
+                    <td class="nowrap"><%= formatWhen(enquiry.created_at) %></td>
                     <td><%= enquiry.buyer_name %></td>
-                    <td><%= enquiry.property_name || enquiry.package_name || 'General' %></td>
-                    <td><%= enquiry.phone %></td>
+                    <td>
+                      <strong><%= enquiry.property_name || enquiry.package_name || 'General' %></strong>
+                      <% if (enquiry.email) { %><div class="cell-note">Email: <%= enquiry.email %></div><% } %>
+                      <% if (enquiry.budget_range) { %><div class="cell-note">Budget: <%= enquiry.budget_range %></div><% } %>
+                      <% if (enquiry.message) { %><div class="cell-note cell-message"><%= enquiry.message %></div><% } %>
+                    </td>
+                    <td><a class="wa-link" href="<%= whatsappChatUrl(enquiry.phone) %>" target="_blank" rel="noopener" title="Open this number in WhatsApp"><%= enquiry.phone %></a></td>
                     <td><%= enquiry.service_type %></td>
                     <td>
                       <form method="POST" action="/admin/enquiries/<%= enquiry.id %>/status">
@@ -162,6 +248,42 @@
               </tbody>
             </table>
           </div>
+
+          <p class="muted-line" style="margin-top: 1.25rem;">
+            Open a package to change its name, rate, badge or its full specification sheet.
+            The sheet is what visitors expand section by section on the Construction page.
+          </p>
+
+          <% packages.forEach((pkg) => { %>
+            <details class="admin-package-editor">
+              <summary><strong><%= pkg.name %></strong> — ₹<%= pkg.rate %>/sq ft<%= pkg.badge ? ` · ${pkg.badge}` : '' %></summary>
+
+              <form method="POST" action="/admin/packages/<%= pkg.id %>" style="margin-top: 1rem;">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                <div class="field-row">
+                  <div class="form-group"><label>Name</label><input name="name" value="<%= pkg.name %>" required /></div>
+                  <div class="form-group"><label>Rate (₹ per sq ft)</label><input name="rate" type="number" value="<%= pkg.rate %>" required /></div>
+                </div>
+                <div class="form-group"><label>Badge</label><input name="badge" value="<%= pkg.badge || '' %>" placeholder="Most Chosen" /></div>
+                <button class="btn btn-secondary" type="submit">Save name, rate and badge</button>
+              </form>
+
+              <form method="POST" action="/admin/packages/<%= pkg.id %>/specs" style="margin-top: 1.25rem;">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                <div class="form-group">
+                  <label>Specification sheet</label>
+                  <textarea name="specs" rows="14" spellcheck="false"><%= pkg.groups.flatMap((group) => group.items.map((item) => `${group.name} | ${item.label} | ${item.content}`)).join('\n') %></textarea>
+                </div>
+                <p class="muted-line">
+                  One line per spec, written as <code>Section | Item | Detail</code> — for example
+                  <code>Kitchen | Countertop | Granite up to ₹150/sq ft</code>.
+                  Lines that share a section name are grouped under it, in this order.
+                  Writing <code>Not included</code> as the detail greys the line out.
+                </p>
+                <button class="btn btn-primary" type="submit">Save specification sheet</button>
+              </form>
+            </details>
+          <% }) %>
         </section>
 
         <section id="testimonials" class="info-panel">
