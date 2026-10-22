@@ -104,6 +104,17 @@ Two settings are yours to change and are reported as failures until you do:
 
 `ADMIN_EMAIL` and `ADMIN_PASSWORD` only seed the first admin account. Once the account exists, a password changed in the dashboard is never overwritten by the built-in default; set a non-empty `ADMIN_PASSWORD` only when you deliberately want to reset it.
 
+## Custom domain
+
+The site serves `shivandapropertiesandconstruction.com` once two things are done - both need the account that owns them:
+
+1. **Netlify** - open the `shivandaproperties` project, then *Domain management > Add a domain*. Enter `shivandapropertiesandconstruction.com`, add `www.shivandapropertiesandconstruction.com` too, and set the bare domain as the primary. Netlify then shows the exact DNS records to create and issues the HTTPS certificate automatically.
+2. **GoDaddy** (where the domain was registered) - open *My Products > DNS* for the domain and either
+   - add the records Netlify lists (`A @ 75.2.60.5` and `CNAME www -> shivandaproperties.netlify.app`), or
+   - switch the nameservers to the Netlify DNS servers shown in that same Netlify screen.
+
+DNS changes usually take a few minutes; the certificate is issued as soon as Netlify verifies the domain. The `*.netlify.app` address keeps working afterwards, and Netlify redirects it to the primary domain.
+
 ## Admin login
 
 Use the values from ADMIN_EMAIL and ADMIN_PASSWORD to sign in at /admin/login.

@@ -135,7 +135,9 @@ app.use(cookieSession({
   maxAge: 1000 * 60 * 60 * 8,
   httpOnly: true,
   sameSite: 'lax',
-  secure: process.env.NODE_ENV === 'production'
+  // Netlify does not set NODE_ENV, so rely on the shared production check:
+  // admin sessions must only travel over HTTPS on the live domain.
+  secure: isProductionLike()
 }));
 app.use(async (req, res, next) => {
   try {
