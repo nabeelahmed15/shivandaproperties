@@ -188,6 +188,9 @@ app.use(async (req, res, next) => {
   try {
     res.locals.siteSettings = await siteSettings();
     res.locals.csrfToken = req.csrfToken ? req.csrfToken() : '';
+    // Absolute address for canonical/og:url, so the site reports whichever
+    // domain it is actually served from (netlify.app now, the custom domain next).
+    res.locals.canonicalUrl = `${req.protocol}://${req.get('host')}${req.originalUrl.split('?')[0]}`;
     next();
   } catch (error) {
     next(error);

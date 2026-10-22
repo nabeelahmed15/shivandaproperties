@@ -146,6 +146,10 @@ async function main() {
     assert(home.body.includes('Shivanda'), 'Homepage content missing Shivanda branding');
     const csrfToken = parseCsrfToken(home.body);
     assert(csrfToken, 'Homepage did not render a CSRF token');
+    assert(
+      home.body.includes(`<link rel="canonical" href="${baseUrl}/"`),
+      'Pages should advertise a canonical address built from the domain they are served on'
+    );
 
     const listing = await request('/properties?location=Whitefield&sort=price_low_high');
     assert(listing.status === 200, 'Property listing page failed');
