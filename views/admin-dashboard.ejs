@@ -45,6 +45,18 @@
             &middot; <%= storage.persistent ? 'Permanent storage' : 'Temporary storage' %>
             &middot; <%= storage.writable === false ? 'Write access problem - changes may fail to save' : 'Write access confirmed' %>
           </p>
+          <% if (storage.mirror && storage.mirror.enabled) { %>
+            <p class="muted-line">
+              <% if (storage.mirror.lastError) { %>
+                Last save failed: <strong><%= storage.mirror.lastError %></strong>
+              <% } else if (storage.mirror.lastSavedAt) { %>
+                Last saved to Netlify: <strong><%= formatWhen(storage.mirror.lastSavedAt) %></strong>
+                (<%= Math.max(1, Math.round((storage.mirror.lastBytes || 0) / 1024)) %> KB)
+              <% } else { %>
+                Waiting for the first save.
+              <% } %>
+            </p>
+          <% } %>
           <div class="field-row" style="margin-top: 1rem;">
             <a class="btn btn-primary" href="/admin/backup.json" download>Download JSON backup</a>
             <a class="btn btn-secondary" href="/admin/enquiries/export/xlsx" download>Download enquiries (Excel)</a>
