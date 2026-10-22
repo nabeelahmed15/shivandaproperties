@@ -36,7 +36,9 @@ Records live in **one** database, chosen by the `DATABASE_URL` environment varia
 | --- | --- | --- |
 | set (for example a free Supabase Postgres project) | Hosted PostgreSQL | Yes - permanent and shared by every device and the live site |
 | not set, run locally | `data/shivanda.db` file on this computer | Yes, but only on this computer - the live site cannot see it |
-| not set, running inside the Netlify function | Temporary file in the function sandbox | **No** - wiped on every cold start and redeploy |
+| not set, running inside the Netlify function | SQLite in the sandbox, mirrored to Netlify Blobs | **Yes** - every write is copied to Netlify Blobs and restored after a cold start, redeploy or new deploy |
+
+The hosted site therefore keeps its data without any hosting configuration. Adding `DATABASE_URL` later upgrades it to PostgreSQL; the app switches automatically on the next deploy.
 
 Check which one is active at any time:
 
@@ -56,13 +58,19 @@ The admin dashboard shows the same information under **Where your data is stored
 
 ## WhatsApp enquiry alerts
 
-Every enquiry is saved in the dashboard **and** sent to your WhatsApp automatically. Add one provider below to your `.env` (or the Netlify environment) and restart the app - no code changes needed. The recipient is the WhatsApp number in **Admin > Settings**, unless `WHATSAPP_TO` is set.
+Every enquiry is saved in the dashboard **and** sent to your WhatsApp automatically.
 
-1. **CallMeBot** (fastest, free, personal use): save the bot number from [callmebot.com](https://www.callmebot.com/blog/free-api-whatsapp-messages/) as a contact, send it `I allow callmebot to send me messages`, then set `CALLMEBOT_APIKEY` to the key it replies with. The bot occasionally stops accepting new numbers; try again later if it does not reply.
+**Turn it on from the website itself (recommended):** sign in at `/admin`, open **Settings > WhatsApp alerts**, paste your CallMeBot key and the number that should receive alerts, then press **Save settings**. No hosting or `.env` access is needed, and the settings survive redeploys.
+
+To get the free key: save **+34 644 51 95 23** as a contact, send it `I allow callmebot to send me messages` on WhatsApp, and paste the key it replies with. The bot occasionally stops accepting new numbers; try again later if it does not reply.
+
+The provider can also be configured through environment variables instead; the dashboard values win when both are present:
+
+1. **CallMeBot** (fastest, free, personal use): `CALLMEBOT_APIKEY` and optionally `CALLMEBOT_PHONE`. The bot occasionally stops accepting new numbers; try again later if it does not reply.
 2. **Meta WhatsApp Cloud API** (official): create a Meta app with the WhatsApp product, then set `WHATSAPP_CLOUD_TOKEN` and `WHATSAPP_PHONE_NUMBER_ID`. Free-form text is only allowed within 24 hours of the owner's last message to your business number; outside that window set `WHATSAPP_TEMPLATE_NAME` (and `WHATSAPP_TEMPLATE_LANG`) to an approved template with a single body variable.
 3. **Twilio WhatsApp**: set `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN` and `TWILIO_WHATSAPP_FROM` (for example `+14155238886` for the sandbox); the owner joins the sandbox once from their phone.
 
-The dashboard shows whether alerts are on, and every enquiry phone number links straight to a WhatsApp chat. When no provider is configured, the enquiry form still shows the visitor a one-tap **Forward it on WhatsApp** link so the message reaches you either way. Notification failures are logged on the server and never block or fail the visitor's enquiry.
+The recipient is the number saved under **Settings > WhatsApp alerts** (falling back to the site's WhatsApp number), unless `WHATSAPP_TO` is set. The dashboard shows whether alerts are on, and every enquiry phone number links straight to a WhatsApp chat. When no provider is configured, the enquiry form still shows the visitor a one-tap **Send this enquiry on WhatsApp as well** link so the message reaches you either way. Notification failures are logged on the server and never block or fail the visitor's enquiry.
 
 ### Confirming the setup
 
@@ -94,7 +102,7 @@ Two settings are yours to change and are reported as failures until you do:
 1. **`SESSION_SECRET`** - use at least 32 random characters. Without it the app generates a random secret at start-up, so admin logins reset on every restart (never a shared default).
 2. **The admin password** - change it from the default under **Settings > Change password**. The dashboard keeps warning until no admin account uses a known default.
 
-`ADMIN_EMAIL` and `ADMIN_PASSWORD` only seed the first admin account; changing them later does not alter an existing password.
+`ADMIN_EMAIL` and `ADMIN_PASSWORD` only seed the first admin account. Once the account exists, a password changed in the dashboard is never overwritten by the built-in default; set a non-empty `ADMIN_PASSWORD` only when you deliberately want to reset it.
 
 ## Admin login
 

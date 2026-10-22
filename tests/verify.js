@@ -6,7 +6,7 @@ const net = require('net');
 const os = require('os');
 const path = require('path');
 const sharp = require('sharp');
-const { normalizePhone, whatsappChatUrl, buildEnquiryMessage } = require('../lib/whatsapp-notify');
+const { normalizePhone, whatsappChatUrl, buildEnquiryMessage, getWhatsAppStatus } = require('../lib/whatsapp-notify');
 
 // The server under test is always started with its own temporary SQLite
 // database, so a local .env pointing at production is never written to.
@@ -298,6 +298,14 @@ async function main() {
     );
     assert(sampleAlert.includes('Asha Rao') && sampleAlert.includes('Sunrise Villas'), 'WhatsApp alert should include the enquiry details');
 
+    // Alerts must be switchable from the dashboard, not only from hosting
+    // environment variables that the owner cannot reach.
+    const savedKeyStatus = getWhatsAppStatus({ wa_callmebot_key: '123456', wa_callmebot_phone: '+91 96860 01144' });
+    assert(savedKeyStatus.configured, 'A CallMeBot key saved in the dashboard should enable WhatsApp alerts');
+    assert(savedKeyStatus.provider === 'CallMeBot', 'Saved dashboard credentials should use CallMeBot');
+    assert(savedKeyStatus.usingSavedKey, 'The dashboard should know a saved key exists');
+    assert(savedKeyStatus.recipient.endsWith('01144'), 'Saved dashboard settings should choose the alert number');
+
     // A package enquiry from the Construction page must keep the package name.
     const packageMessage = 'Please share the full specification sheet and a site visit slot.';
     const packageResponse = await request('/api/enquiry', {
@@ -383,6 +391,8 @@ async function main() {
     assert(adminPage.body.includes('Write access confirmed'), 'Admin dashboard should confirm database write access');
     assert(adminPage.body.includes('/admin/backup.json'), 'Admin dashboard should offer the JSON backup download');
     assert(adminPage.body.includes('WhatsApp alerts are off'), 'Admin dashboard should report missing WhatsApp alert configuration');
+    assert(adminPage.body.includes('wa_callmebot_key'), 'Admin settings should let the owner save a WhatsApp API key');
+    assert(adminPage.body.includes('CallMeBot'), 'Admin settings should explain how to get the WhatsApp key');
 
     const enquiryRow = adminPage.body.split(/<tr[\s>]/).find((chunk) => chunk.includes(firstPhone));
     assert(enquiryRow, 'Created enquiry should appear in the admin dashboard');
@@ -532,6 +542,29 @@ async function main() {
     assert(deleteProperty.status === 200 || deleteProperty.status === 302, 'Property delete flow should succeed');
     const afterDeleteListing = await request('/properties');
     assert(!afterDeleteListing.body.includes(uniquePropertyTitle), 'Deleted property should disappear from the public listing');
+
+    // WhatsApp alerts are switched on from the dashboard and stored with the
+    // rest of the settings, so they survive a restart without hosting access.
+    const settingsToken = parseCsrfToken((await request('/admin')).body);
+    const savedWhatsApp = await request('/admin/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: `wa_callmebot_phone=${encodeURIComponent('+91 96860 01144')}&wa_callmebot_key=test-key-123&_csrf=${encodeURIComponent(settingsToken)}`
+    });
+    assert(savedWhatsApp.status === 200 || savedWhatsApp.status === 302, 'Saving WhatsApp settings should succeed');
+
+    const afterWhatsApp = await request('/admin');
+    assert(afterWhatsApp.body.includes('WhatsApp alerts are on'), 'Dashboard should report alerts on after saving a key');
+    assert(!afterWhatsApp.body.includes('test-key-123'), 'The saved WhatsApp key must never be printed back in the page');
+
+    const clearedWhatsApp = await request('/admin/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: `wa_callmebot_clear=1&_csrf=${encodeURIComponent(parseCsrfToken(afterWhatsApp.body))}`
+    });
+    assert(clearedWhatsApp.status === 200 || clearedWhatsApp.status === 302, 'Clearing the WhatsApp key should succeed');
+    const afterClear = await request('/admin');
+    assert(afterClear.body.includes('WhatsApp alerts are off'), 'Clearing the saved key should turn alerts off again');
 
     console.log('Verification checks passed');
   } finally {

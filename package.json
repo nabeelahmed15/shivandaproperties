@@ -14,7 +14,7 @@
     "whatsapp:test": "node scripts/whatsapp-test.js",
     "security:check": "node scripts/security-check.js",
     "prepare-assets": "node scripts/prepare-assets.js",
-    "test": "node tests/verify.js"
+    "test": "node tests/persistence-check.js && node tests/verify.js"
   },
   "keywords": [
     "real-estate",

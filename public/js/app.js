@@ -126,7 +126,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // When the business has WhatsApp alerts wired up the message already
             // reached them; otherwise let the visitor forward it in one tap.
             link: result.whatsappUrl,
-            linkLabel: result.whatsappDelivered ? 'Chat on WhatsApp' : 'Forward it on WhatsApp'
+            linkLabel: result.whatsappDelivered ? 'Chat with us on WhatsApp' : 'Send this enquiry on WhatsApp as well'
           });
           form.reset();
         } else {

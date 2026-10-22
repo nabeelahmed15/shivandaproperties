@@ -3,6 +3,10 @@ command = "npm run prepare-assets"
 publish = "public"
 functions = "netlify/functions"
 
+[build.environment]
+# Netlify Blobs needs Node 22.12+; the functions runtime follows this build version.
+NODE_VERSION = "22"
+
 [functions]
 node_bundler = "esbuild"
 external_node_modules = ["better-sqlite3"]

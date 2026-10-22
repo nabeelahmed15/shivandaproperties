@@ -24,6 +24,7 @@ const {
 } = require('./lib/backup');
 const { resolveSessionSecret, securityReport, isProductionLike } = require('./lib/security');
 const { saveEnquiry, removeEnquiry, rehydrate } = require('./lib/enquiry-store');
+const sqlitePersistence = require('./lib/sqlite-persistence');
 const { groupSpecs } = require('./lib/package-specs');
 const {
   sendEnquiryAlert,
@@ -144,6 +145,25 @@ app.use(async (req, res, next) => {
     next(error);
   }
 });
+
+// On Netlify the SQLite file only lives as long as one instance. Before any
+// response to a change is sent, wait until that change has been copied to
+// durable storage, so a submitted enquiry or property edit cannot evaporate.
+if (sqlitePersistence.isEnabled()) {
+  app.use((req, res, next) => {
+    if (req.method === 'GET' || req.method === 'HEAD' || req.method === 'OPTIONS') return next();
+
+    const originalEnd = res.end.bind(res);
+    let finished = false;
+    res.end = (...args) => {
+      if (finished) return originalEnd(...args);
+      finished = true;
+      sqlitePersistence.flush().catch(() => {}).finally(() => originalEnd(...args));
+      return res;
+    };
+    return next();
+  });
+}
 
 app.use(express.static(path.join(rootDir, 'public'), { maxAge: '30d' }));
 if (!process.env.CLOUDINARY_URL) app.use('/uploads', express.static(uploadsDir));
@@ -875,10 +895,27 @@ app.post('/admin/settings', requireAdmin, csrfProtection, async (req, res) => {
     ['stats_years', req.body.stats_years],
     ['stats_properties', req.body.stats_properties],
     ['stats_homes', req.body.stats_homes],
-    ['stats_families', req.body.stats_families]
+    ['stats_families', req.body.stats_families],
+    ['wa_callmebot_phone', req.body.wa_callmebot_phone]
   ];
 
-  await Promise.all(fields.map(([key, value]) => setSetting(key, value || '')));
+  // Only fields the form actually sent are updated, so a partial save can never
+  // blank out the rest of the settings.
+  await Promise.all(
+    fields
+      .filter(([, value]) => value !== undefined)
+      .map(([key, value]) => setSetting(key, (value || '').trim()))
+  );
+
+  // The API key field is a password input and is never rendered back, so an
+  // empty submission means "keep the saved key" rather than "delete it".
+  const callmebotKey = String(req.body.wa_callmebot_key || '').trim();
+  if (callmebotKey) {
+    await setSetting('wa_callmebot_key', callmebotKey);
+  } else if (req.body.wa_callmebot_clear === '1') {
+    await setSetting('wa_callmebot_key', '');
+  }
+
   res.redirect('/admin#settings');
 });
 

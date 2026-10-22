@@ -171,7 +171,7 @@
             <% if (whatsappAlerts.configured) { %>
               <strong>WhatsApp alerts are on.</strong> Every new enquiry is also sent to <%= whatsappAlerts.recipient %> automatically via <%= whatsappAlerts.provider %>.
             <% } else { %>
-              <strong>WhatsApp alerts are off.</strong> New enquiries are only saved here. Add a CallMeBot key, WhatsApp Cloud API token or Twilio credentials to your environment to receive each one on WhatsApp &mdash; see the README.
+              <strong>WhatsApp alerts are off.</strong> New enquiries are only saved here. Add your CallMeBot key in <a href="#settings">Settings &rsaquo; WhatsApp alerts</a> to receive each one on WhatsApp automatically.
             <% } %>
           </div>
           <form method="POST" action="/admin/whatsapp/test" style="margin-top: 0.8rem;">
@@ -347,6 +347,37 @@
               <div class="form-group"><label>Homes built</label><input name="stats_homes" value="<%= settings.stats_homes || '' %>" /></div>
               <div class="form-group"><label>Happy families</label><input name="stats_families" value="<%= settings.stats_families || '' %>" /></div>
             </div>
+            <h3 style="margin-top: 1.5rem;">WhatsApp alerts</h3>
+          <div class="alert-status <%= whatsappAlerts.configured ? 'is-on' : 'is-off' %>" role="status" style="margin-top: 0.5rem;">
+            <% if (whatsappAlerts.configured) { %>
+              <strong>WhatsApp alerts are on.</strong> New enquiries are sent to <%= whatsappAlerts.recipient %> via <%= whatsappAlerts.provider %> as well as saved here.
+            <% } else if (whatsappAlerts.provider) { %>
+              <strong>Almost there.</strong> The <%= whatsappAlerts.provider %> key is saved but no WhatsApp number is set. Fill in the number below and save.
+            <% } else { %>
+              <strong>WhatsApp alerts are off.</strong> Add your CallMeBot key below and every new enquiry reaches your phone automatically.
+            <% } %>
+          </div>
+            <ol class="muted-line" style="margin: 0 0 1rem 1.1rem; line-height: 1.7;">
+              <li>Save <strong>+34 644 51 95 23</strong> in your phone contacts.</li>
+              <li>Send it this message on WhatsApp: <code>I allow callmebot to send me messages</code>.</li>
+              <li>It replies with an API key &mdash; paste that key below, add your number, and save.</li>
+            </ol>
+            <div class="field-row">
+              <div class="form-group">
+                <label>WhatsApp number for alerts</label>
+                <input name="wa_callmebot_phone" value="<%= settings.wa_callmebot_phone || settings.whatsapp || '' %>" placeholder="+91 96860 01144" />
+              </div>
+              <div class="form-group">
+                <label>CallMeBot API key</label>
+                <input name="wa_callmebot_key" type="password" autocomplete="off" placeholder="<%= whatsappAlerts.usingSavedKey ? 'Saved - leave blank to keep it' : 'Paste the key from WhatsApp' %>" />
+              </div>
+            </div>
+            <% if (whatsappAlerts.usingSavedKey) { %>
+              <label class="muted-line" style="display:flex; gap:0.5rem; align-items:center; margin-bottom:0.75rem;">
+                <input type="checkbox" name="wa_callmebot_clear" value="1" style="width:auto;" />
+                Remove the saved key and turn alerts off
+              </label>
+            <% } %>
             <button class="btn btn-primary" type="submit">Save settings</button>
           </form>
 
