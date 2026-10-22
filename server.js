@@ -27,6 +27,16 @@ const { saveEnquiry, removeEnquiry, rehydrate } = require('./lib/enquiry-store')
 const sqlitePersistence = require('./lib/sqlite-persistence');
 const { groupSpecs } = require('./lib/package-specs');
 const {
+  resolvePageSeo,
+  organizationJsonLd,
+  websiteJsonLd,
+  servicesJsonLd,
+  realEstateListingJsonLd,
+  faqJsonLd,
+  breadcrumbJsonLd,
+  escapeHtml
+} = require('./lib/seo');
+const {
   sendEnquiryAlert,
   getWhatsAppStatus,
   buildVisitorMessage,
@@ -190,7 +200,9 @@ app.use(async (req, res, next) => {
     res.locals.csrfToken = req.csrfToken ? req.csrfToken() : '';
     // Absolute address for canonical/og:url, so the site reports whichever
     // domain it is actually served from (netlify.app now, the custom domain next).
-    res.locals.canonicalUrl = `${req.protocol}://${req.get('host')}${req.originalUrl.split('?')[0]}`;
+    const canonicalPath = req.originalUrl.split('?')[0];
+    res.locals.canonicalUrl = `${req.protocol}://${req.get('host')}${canonicalPath}`;
+    res.locals.siteOrigin = `${req.protocol}://${req.get('host')}`;
     next();
   } catch (error) {
     next(error);
@@ -352,8 +364,25 @@ app.get('/', async (req, res) => {
   const testimonials = await db.prepare('SELECT * FROM testimonials ORDER BY id DESC').all();
   const gallery = await db.prepare('SELECT * FROM projects_gallery ORDER BY id DESC LIMIT 12').all();
 
+  const origin = res.locals.siteOrigin;
+  const orgSchema = organizationJsonLd({ origin, settings: res.locals.siteSettings });
+  const homeSeo = resolvePageSeo({
+    title: 'Shivanda Properties & Construction | Real Estate and Construction in Bengaluru'
+  }, 'home');
+
   res.render('index', {
-    title: 'Shivanda Properties & Construction | Real Estate and Construction in Bengaluru',
+    title: homeSeo.ogTitle,
+    description: homeSeo.description,
+    keywords: homeSeo.keywords,
+    ogTitle: homeSeo.ogTitle,
+    ogType: 'website',
+    ogImage: homeSeo.ogImage,
+    structuredData: [
+      orgSchema,
+      websiteJsonLd({ origin, settings: res.locals.siteSettings }),
+      faqJsonLd({ origin, faqs }),
+      servicesJsonLd({ origin, settings: res.locals.siteSettings, packages })
+    ].filter(Boolean),
     properties,
     packages: packagesWithSpecs,
     faqs,
@@ -417,8 +446,27 @@ app.get('/properties', async (req, res) => {
     LIMIT ? OFFSET ?
   `).all(...params, limit, offset);
 
+  const origin = res.locals.siteOrigin;
+  const listingSeo = resolvePageSeo({ title: 'Property Listings in Bengaluru | Shivanda Properties' }, 'properties');
+  const listingFilters = [location, type, status].filter(Boolean);
+
   res.render('properties', {
-    title: 'Property Listings',
+    title: listingSeo.ogTitle,
+    description: listingSeo.description,
+    keywords: listingSeo.keywords,
+    ogTitle: listingSeo.ogTitle,
+    ogType: 'website',
+    ogImage: listingSeo.ogImage,
+    structuredData: [
+      organizationJsonLd({ origin, settings: res.locals.siteSettings }),
+      breadcrumbJsonLd({
+        origin,
+        items: [
+          { name: 'Home', url: '/' },
+          { name: listingFilters.length ? `${listingFilters.join(', ')} properties` : 'Properties', url: '/properties' }
+        ]
+      })
+    ].filter(Boolean),
     properties,
     page,
     totalPages,
@@ -430,7 +478,7 @@ app.get('/properties', async (req, res) => {
 
 app.get('/property/:slug', async (req, res) => {
   const property = await db.prepare('SELECT * FROM properties WHERE slug = ? AND is_published = 1 LIMIT 1').get(req.params.slug);
-  if (!property) return res.status(404).render('404', { title: 'Property not found' });
+  if (!property) return res.status(404).render('404', { title: 'Property not found', noindex: true });
 
   const gallery = await db.prepare('SELECT * FROM property_images WHERE property_id = ? ORDER BY sort_order, id').all(property.id);
   const amenities = parseAmenities(property.amenities);
@@ -443,8 +491,34 @@ app.get('/property/:slug', async (req, res) => {
     cover_image: await generateCardImage(item)
   })));
 
+  const propertyOrigin = res.locals.siteOrigin;
+  const propertySeo = resolvePageSeo({
+    title: `${property.title} | Shivanda Properties`,
+    description: (property.description || `${property.title} - ${property.type || 'property'} in ${property.locality || 'Bengaluru'}. Contact Shivanda Properties & Construction for details, photos and site visits.`).slice(0, 300),
+    keywords: `${property.title}, ${property.locality || 'Bengaluru'} ${property.type || 'property'}, ${property.type || 'property'} for sale Bengaluru, buy property ${property.locality || 'Bengaluru'}`,
+    ogType: 'article',
+    ogImage: gallery[0] ? gallery[0].image_url : '/images/logo.webp'
+  });
+
   res.render('property-detail', {
-    title: property.title,
+    title: propertySeo.ogTitle,
+    description: propertySeo.description,
+    keywords: propertySeo.keywords,
+    ogTitle: propertySeo.ogTitle,
+    ogType: 'article',
+    ogImage: propertySeo.ogImage,
+    structuredData: [
+      organizationJsonLd({ origin: propertyOrigin, settings: res.locals.siteSettings }),
+      realEstateListingJsonLd({ origin: propertyOrigin, property, coverImage: gallery[0] ? gallery[0].image_url : '' }),
+      breadcrumbJsonLd({
+        origin: propertyOrigin,
+        items: [
+          { name: 'Home', url: '/' },
+          { name: 'Properties', url: '/properties' },
+          { name: property.title, url: `/property/${property.slug}` }
+        ]
+      })
+    ].filter(Boolean),
     property,
     gallery,
     amenities,
@@ -462,8 +536,28 @@ app.get('/construction', async (req, res) => {
   }));
   const gallery = await db.prepare('SELECT * FROM projects_gallery ORDER BY id DESC LIMIT 12').all();
 
+  const origin = res.locals.siteOrigin;
+  const constructionSeo = resolvePageSeo({ title: 'Construction Packages in Bengaluru | Shivanda Properties' }, 'construction');
+  const constructionOrg = organizationJsonLd({ origin, settings: res.locals.siteSettings });
+
   res.render('construction', {
-    title: 'Construction Packages',
+    title: constructionSeo.ogTitle,
+    description: constructionSeo.description,
+    keywords: constructionSeo.keywords,
+    ogTitle: constructionSeo.ogTitle,
+    ogType: 'website',
+    ogImage: constructionSeo.ogImage,
+    structuredData: [
+      constructionOrg,
+      servicesJsonLd({ origin, settings: res.locals.siteSettings, packages }),
+      breadcrumbJsonLd({
+        origin,
+        items: [
+          { name: 'Home', url: '/' },
+          { name: 'Construction Packages', url: '/construction' }
+        ]
+      })
+    ].filter(Boolean),
     packages: packagesWithSpecs,
     gallery,
     formatPrice
@@ -487,8 +581,26 @@ app.get('/contact', async (req, res) => {
     }
   }
 
+  const origin = res.locals.siteOrigin;
+  const contactSeo = resolvePageSeo({ title: 'Contact Shivanda Properties & Construction | Bengaluru' }, 'contact');
+
   res.render('contact', {
-    title: 'Contact Shivanda',
+    title: contactSeo.ogTitle,
+    description: contactSeo.description,
+    keywords: contactSeo.keywords,
+    ogTitle: contactSeo.ogTitle,
+    ogType: 'website',
+    ogImage: contactSeo.ogImage,
+    structuredData: [
+      organizationJsonLd({ origin, settings: res.locals.siteSettings }),
+      breadcrumbJsonLd({
+        origin,
+        items: [
+          { name: 'Home', url: '/' },
+          { name: 'Contact', url: '/contact' }
+        ]
+      })
+    ].filter(Boolean),
     interest,
     packageName,
     interestedProperty,
@@ -1133,30 +1245,62 @@ app.get('/admin/backup.json', requireAdmin, async (req, res) => {
   }
 });
 
-app.get('/sitemap.xml', (req, res) => {
-  const urls = [
-    '/',
-    '/properties',
-    '/construction',
-    '/contact'
-  ];
-  const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  ${urls.map((url) => `<url><loc>https://shivanda.in${url}</loc></url>`).join('\n  ')}
-</urlset>`;
-  res.type('application/xml').send(xml);
-});
-
 app.get('/favicon.ico', (req, res) => {
   res.redirect(302, '/images/favicon-32.png');
 });
 
 app.get('/robots.txt', (req, res) => {
-  res.type('text/plain').send('User-agent: *\nAllow: /\nSitemap: https://shivanda.in/sitemap.xml\n');
+  // The sitemap URL must match the domain the request actually arrived on,
+  // otherwise Google is pointed at a domain that no longer exists.
+  const origin = res.locals.siteOrigin || `${req.protocol}://${req.get('host')}`;
+  res.type('text/plain').send(
+    `User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /api/\nSitemap: ${origin}/sitemap.xml\n`
+  );
+});
+
+app.get('/sitemap.xml', async (req, res) => {
+  const origin = res.locals.siteOrigin || `${req.protocol}://${req.get('host')}`;
+
+  const properties = await db
+    .prepare('SELECT slug, updated_at FROM properties WHERE is_published = 1 ORDER BY updated_at DESC')
+    .all();
+
+  const staticPages = [
+    { loc: `${origin}/`, changefreq: 'weekly', priority: '1.0' },
+    { loc: `${origin}/properties`, changefreq: 'daily', priority: '0.9' },
+    { loc: `${origin}/construction`, changefreq: 'weekly', priority: '0.9' },
+    { loc: `${origin}/contact`, changefreq: 'monthly', priority: '0.7' }
+  ];
+
+  const propertyUrls = properties
+    .filter((row) => row.slug)
+    .map((row) => ({
+      loc: `${origin}/property/${encodeURIComponent(row.slug)}`,
+      lastmod: row.updated_at ? String(row.updated_at).slice(0, 10) : '',
+      changefreq: 'monthly',
+      priority: '0.8'
+    }));
+
+  const urls = [...staticPages, ...propertyUrls];
+  const xml = [
+    '<?xml version="1.0" encoding="UTF-8"?>',
+    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+    ...urls.map((url) => {
+      const parts = [`  <url>`, `    <loc>${escapeHtml(url.loc)}</loc>`];
+      if (url.lastmod) parts.push(`    <lastmod>${url.lastmod}</lastmod>`);
+      parts.push(`    <changefreq>${url.changefreq}</changefreq>`);
+      parts.push(`    <priority>${url.priority}</priority>`);
+      parts.push(`  </url>`);
+      return parts.join('\n');
+    }),
+    '</urlset>'
+  ].join('\n');
+
+  res.type('application/xml').send(xml);
 });
 
 app.use((req, res) => {
-  res.status(404).render('404', { title: 'Page not found' });
+  res.status(404).render('404', { title: 'Page not found', noindex: true });
 });
 
 app.use((error, req, res, next) => {
@@ -1182,7 +1326,7 @@ app.use((error, req, res, next) => {
   res.locals = res.locals || {};
   res.locals.siteSettings = res.locals.siteSettings || {};
   res.locals.csrfToken = res.locals.csrfToken || '';
-  res.status(500).render('500', { title: 'Something went wrong' });
+  res.status(500).render('500', { title: 'Something went wrong', noindex: true });
 });
 
 const server = http.createServer(app);

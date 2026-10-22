@@ -151,6 +151,52 @@ async function main() {
       'Pages should advertise a canonical address built from the domain they are served on'
     );
 
+    // Search-engine metadata: every public page ships a description, keywords,
+    // an indexable robots tag and schema.org structured data, and the sitemap
+    // and robots file point at the domain the request arrived on.
+    assert(home.body.includes('name="description"'), 'Homepage is missing a meta description');
+    assert(home.body.includes('name="keywords"'), 'Homepage is missing meta keywords');
+    assert(home.body.includes('content="index, follow'), 'Homepage should be indexable');
+    assert(home.body.includes('application/ld+json'), 'Homepage should emit JSON-LD structured data');
+    assert(home.body.includes('RealEstateAgent'), 'Homepage JSON-LD should describe the business');
+    assert(home.body.includes('"@type":"FAQPage"'), 'Homepage JSON-LD should mark up the FAQs');
+    assert(home.body.includes('og:description') && home.body.includes('twitter:description'), 'Social card tags are missing');
+
+    const robots = await request('/robots.txt');
+    assert(robots.status === 200, 'robots.txt should respond');
+    assert(robots.body.includes(`Sitemap: ${baseUrl}/sitemap.xml`), 'robots.txt should point at the live sitemap URL');
+    assert(!robots.body.includes('shivanda.in'), 'robots.txt must not reference a retired domain');
+
+    const sitemap = await request('/sitemap.xml');
+    assert(sitemap.status === 200, 'sitemap.xml should respond');
+    assert(sitemap.headers.get('content-type').includes('xml'), 'sitemap.xml should be served as XML');
+    assert(sitemap.body.includes(`<loc>${baseUrl}/properties</loc>`), 'Sitemap should list the property listings page');
+    assert(sitemap.body.includes(`<loc>${baseUrl}/construction</loc>`), 'Sitemap should list the construction page');
+
+    // A published property should be listed in the sitemap and carry its own
+    // listing structured data on the detail page.
+    const propertyRow = (await request('/properties')).body.match(/href="\/property\/([^"]+)"/);
+    if (propertyRow) {
+      const slug = propertyRow[1];
+      assert(
+        sitemap.body.includes(`<loc>${baseUrl}/property/${slug}</loc>`),
+        'Sitemap should list published properties'
+      );
+      const detail = await request(`/property/${slug}`);
+      assert(detail.status === 200, 'Property detail page failed');
+      assert(
+        detail.body.includes('RealEstateListing'),
+        'Property detail should emit RealEstateListing structured data'
+      );
+      assert(detail.body.includes('name="description"'), 'Property detail is missing a meta description');
+      assert(detail.body.includes('"@type":"BreadcrumbList"'), 'Property detail should emit breadcrumb structured data');
+    }
+
+    // Error pages must stay out of search results.
+    const notFound = await request('/this-page-does-not-exist');
+    assert(notFound.status === 404, 'Unknown path should return 404');
+    assert(notFound.body.includes('noindex'), '404 pages should be marked noindex');
+
     const listing = await request('/properties?location=Whitefield&sort=price_low_high');
     assert(listing.status === 200, 'Property listing page failed');
     assert(listing.body.includes('Harbor Park Apartments'), 'Property filter page excludes expected property');
@@ -187,6 +233,10 @@ async function main() {
     assert(
       construction.body.includes('id="estimate-list"') && construction.body.includes('data-rate="2149"'),
       'Package page should carry the estimator and expose each rate for it'
+    );
+    assert(
+      construction.body.includes('application/ld+json') && construction.body.includes('UnitPriceSpecification'),
+      'Construction page should expose package prices as structured data'
     );
     assert(
       home.body.includes('See full Elegance sheet') && home.body.includes('Design &amp; Development</span>'),

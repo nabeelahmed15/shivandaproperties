@@ -1,19 +1,46 @@
-<!DOCTYPE html>
+<%
+  // Per-page SEO is optional: a route that passes nothing still renders a
+  // complete set of tags from the shared defaults.
+  const seoTitle = title || 'Shivanda Properties & Construction | Real Estate and Construction in Bengaluru';
+  const seoDescription = (typeof description === 'string' && description) ? description : 'Shivanda Properties & Construction offers premium real estate and construction services across Bengaluru.';
+  const seoKeywords = (typeof keywords === 'string' && keywords) ? keywords : 'real estate Bengaluru, property for sale Bangalore, turnkey construction Bengaluru, construction packages Nelamangala';
+  const seoOgTitle = (typeof ogTitle === 'string' && ogTitle) ? ogTitle : seoTitle;
+  const seoOgType = (typeof ogType === 'string' && ogType) ? ogType : 'website';
+  const seoOgImage = (typeof ogImage === 'string' && ogImage) ? ogImage : '/images/logo.webp';
+  // Social cards need an absolute image URL; the site origin is the domain the
+  // request actually arrived on.
+  const seoOrigin = (typeof siteOrigin === 'string' && siteOrigin)
+    ? siteOrigin
+    : (typeof canonicalUrl === 'string' ? canonicalUrl.replace(/\/[^/]*$/, '') : '');
+  const seoOgImageAbsolute = /^https?:\/\//i.test(seoOgImage) ? seoOgImage : seoOrigin + seoOgImage;
+  const structuredDataBlocks = (typeof structuredData === 'object' && structuredData) ? structuredData.filter(Boolean) : [];
+  // Error pages must never appear in search results.
+  const robotsMeta = (typeof noindex !== 'undefined' && noindex) ? 'noindex, nofollow' : 'index, follow, max-image-preview:large';
+%><!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#061f16" />
-    <meta name="description" content="Shivanda Properties & Construction offers premium real estate and construction services across Bengaluru." />
+    <meta name="description" content="<%= seoDescription %>" />
+    <meta name="keywords" content="<%= seoKeywords %>" />
+    <meta name="robots" content="<%= robotsMeta %>" />
+    <meta name="author" content="Shivanda Properties & Construction" />
     <meta name="csrf-token" content="<%= csrfToken %>" />
-    <meta property="og:title" content="Shivanda Properties & Construction | Real Estate and Construction in Bengaluru" />
-    <meta property="og:description" content="Explore homes, investments, and turnkey construction services in Bengaluru with Shivanda." />
-    <meta property="og:type" content="website" />
+    <meta property="og:title" content="<%= seoOgTitle %>" />
+    <meta property="og:description" content="<%= seoDescription %>" />
+    <meta property="og:type" content="<%= seoOgType %>" />
     <meta property="og:url" content="<%= typeof canonicalUrl === 'string' ? canonicalUrl : '' %>" />
+    <meta property="og:site_name" content="Shivanda Properties & Construction" />
+    <meta property="og:locale" content="en_IN" />
     <link rel="canonical" href="<%= typeof canonicalUrl === 'string' ? canonicalUrl : '' %>" />
-    <meta property="og:image" content="/images/logo.webp" />
+    <meta property="og:image" content="<%= seoOgImageAbsolute %>" />
     <meta name="twitter:card" content="summary_large_image" />
-    <title><%= title || 'Shivanda Properties & Construction | Real Estate and Construction in Bengaluru' %></title>
+    <meta name="twitter:title" content="<%= seoOgTitle %>" />
+    <meta name="twitter:description" content="<%= seoDescription %>" />
+    <meta name="twitter:image" content="<%= seoOgImageAbsolute %>" />
+    <% structuredDataBlocks.forEach(function (block) { %><script type="application/ld+json"><%- JSON.stringify(block).replace(/</g, '\\u003c') %></script><% }); %>
+    <title><%= seoTitle %></title>
     <link rel="icon" type="image/png" href="/images/favicon-32.png" />
     <link rel="apple-touch-icon" href="/images/apple-touch-icon.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
