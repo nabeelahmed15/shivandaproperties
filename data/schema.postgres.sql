@@ -97,3 +97,20 @@ CREATE TABLE IF NOT EXISTS settings (
 );
 CREATE INDEX IF NOT EXISTS enquiries_created_at_idx ON enquiries (created_at DESC);
 CREATE INDEX IF NOT EXISTS property_images_property_idx ON property_images (property_id, is_cover, sort_order);
+
+-- Supabase serves every table in the public schema through its API to anyone
+-- holding the project URL and anon key unless Row-Level Security is on.
+-- This app only ever talks to Postgres through DATABASE_URL (the postgres
+-- role, which owns the tables), so enabling RLS with no policies closes the
+-- public API completely without changing anything the site does.
+-- ensureTables() runs this file on every start, so the fix stays applied.
+ALTER TABLE IF EXISTS admins ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS properties ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS property_images ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS packages ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS package_specs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS enquiries ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS testimonials ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS faqs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS projects_gallery ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS settings ENABLE ROW LEVEL SECURITY;
